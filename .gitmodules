@@ -16,3 +16,6 @@
 [submodule "comparison"]
 	path = comparison
 	url = https://github.com/modelearth/comparison
+[submodule "team"]
+	path = team
+	url = https://github.com/modelearth/team
