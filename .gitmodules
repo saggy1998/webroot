@@ -1,0 +1,18 @@
+[submodule "localsite"]
+	path = localsite
+	url = https://github.com/ModelEarth/localsite
+[submodule "feed"]
+	path = feed
+	url = https://github.com/modelearth/feed
+[submodule "swiper"]
+	path = swiper
+	url = https://github.com/modelearth/swiper
+[submodule "home"]
+	path = home
+	url = https://github.com/ModelEarth/home
+[submodule "products"]
+	path = products
+	url = https://github.com/modelearth/products
+[submodule "comparison"]
+	path = comparison
+	url = https://github.com/modelearth/comparison
