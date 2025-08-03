@@ -16,10 +16,12 @@ MacOS
 
 WindowsOS
 
-	python -m venv env &
-	env\Scripts\activate &
-	npx @anthropic-ai/claude-code
+	python -m venv env && env\Scripts\activate && npx @anthropic-ai/claude-code
 
+On a new Windows machine, you many need to first adjust Execution Policies for the current user, and include ".psi" at the end of the activate line:
+
+	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+	env\Scripts\Activate.ps1
 
 Run the following in your local "webroot" folder to start an http server on port 8880
 
