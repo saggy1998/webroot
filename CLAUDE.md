@@ -2,9 +2,9 @@
 
 ## Start server or Restart server
 
-python -m http.server 8880 &
+nohup python -m http.server 8880 > /dev/null 2>&1 &
 
-Note: The & runs the server in the background to keep it running continuously.
+Note: Uses nohup to run server in background and redirect output to avoid timeout.
 
 ## Development Commands
 
