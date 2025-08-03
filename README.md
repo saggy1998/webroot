@@ -18,6 +18,10 @@ WindowsOS
 
 Run the following in your local "webroot" folder to start an http server on port 8880
 
+	start server
+
+Or
+
 	python -m http.server 8880
 
 Then view pages at:

@@ -1,8 +1,10 @@
 # CLAUDE.md
 
-## Start server
+## Start server or Restart server
 
-python -m http.server 8880
+python -m http.server 8880 &
+
+Note: The & runs the server in the background to keep it running continuously.
 
 ## Development Commands
 
