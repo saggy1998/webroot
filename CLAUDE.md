@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## Start server
+
+python -m http.server 8880
+
 ## Development Commands
 
 ### Github
