@@ -2,7 +2,7 @@
 
 ## Start server or Restart server
 
-nohup python -m http.server 8880 > /dev/null 2>&1 &
+nohup python -m http.server 8887 > /dev/null 2>&1 &
 
 Note: Uses nohup to run server in background and redirect output to avoid timeout.
 
