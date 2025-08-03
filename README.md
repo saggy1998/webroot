@@ -6,7 +6,7 @@ Fork and clone the [modelearth/webroot](https://github.com/modelearth/webroot/)
 
 Choose "contribute to parent repo"
 
-Right-click on "webroot" and start a virtual environment with Claude Code CLI.
+Right-click on "webroot" choose "Open in Terminal", and start a virtual environment with Claude Code CLI.
 
 MacOS
 
@@ -16,10 +16,9 @@ MacOS
 
 WindowsOS
 
-	python -m venv env
-	env\Scripts\activate
+	python -m venv env &
+	env\Scripts\activate &
 	npx @anthropic-ai/claude-code
-
 
 
 Run the following in your local "webroot" folder to start an http server on port 8880
@@ -38,3 +37,6 @@ Then view pages at:
 [localhost:8880/localsite](http://localhost:8880/comparison/)  
 [localhost:8880/localsite](http://localhost:8880/localsite/)  
 [localhost:8880/feed](http://localhost:8880/feed/)  
+
+
+Also look at your code with an editor like VS Code.
