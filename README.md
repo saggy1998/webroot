@@ -14,14 +14,20 @@ MacOS
 	source env/bin/activate
 	npx @anthropic-ai/claude-code
 
-WindowsOS
+WindowsOS (first time)
 
-	python -m venv env && env\Scripts\activate && npx @anthropic-ai/claude-code
+<!-- Not sure yet if .bat will be there for all Windows usage. -->
 
-On a new Windows machine, you many need to first adjust Execution Policies for the current user, and include ".psi" at the end of the activate line:
+	python -m venv env && env\Scripts\activate.bat && npx @anthropic-ai/claude-code
 
-	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-	env\Scripts\Activate.ps1
+Install Node.js if this https://nodejs.org/
+
+	npx @anthropic-ai/claude-code
+
+WindowsOS (subsequent times)
+
+	python -m venv env && env\Scripts\activate.bat && npx @anthropic-ai/claude-code
+
 
 Run the following in your local "webroot" folder to start an http server on port 8880
 
