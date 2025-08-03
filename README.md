@@ -1,6 +1,12 @@
 # simple webroot
 
-First start a virtual environment with Claude Code CLI in the modelearth folder.
+Install Github Desktop
+
+Fork and clone the [modelearth/webroot](https://github.com/modelearth/webroot/)
+
+Choose "contribute to parent repo"
+
+Right-click on "webroot" and start a virtual environment with Claude Code CLI.
 
 MacOS
 
