@@ -34,8 +34,11 @@ When a user says "commit [submodule name]", use these IMPROVED steps to avoid er
 
 **Method 1 - Using git submodule foreach (RECOMMENDED):**
 ```bash
-# Step 1: Commit to submodule using foreach
-git submodule foreach 'git add . && git commit -m "Description of changes" && git push origin HEAD:main'
+# Step 1a: Check which submodules have changes first
+git submodule foreach 'git status'
+
+# Step 1b: Commit ONLY to specific submodule to avoid errors from clean submodules
+git submodule foreach --recursive 'if [ "$name" = "[submodule name]" ]; then git add . && git commit -m "Description of changes" && git push origin HEAD:main; fi'
 
 # Step 2: Update parent repository 
 git submodule update --remote [submodule name]
@@ -61,6 +64,9 @@ git push
 - Method 1 handles detached HEAD states automatically
 - Both methods require updating the parent repository
 - If git submodule foreach fails, the submodule may not exist or be corrupted
+- **NEW**: Always check status first to see which submodules actually have changes
+- **NEW**: Use conditional `if [ "$name" = "submodule" ]` to target specific submodule and avoid "nothing to commit" errors from clean submodules
+- **NEW**: The `--recursive` flag ensures nested submodules are handled properly
 
 #### Quick Commands for Submodules
 - **"commit [submodule name]"**: Complete 8-step workflow above
