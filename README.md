@@ -16,4 +16,4 @@ Then view pages at:
 [localhost:8887/feed](http://localhost:8887/feed/)  
 
 
-Also look at your code with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) (free) or [WebStorm](https://www.jetbrains.com/webstorm/).
+Also look at your code with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
