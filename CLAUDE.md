@@ -30,18 +30,37 @@ cd ..
 ### Submodule Management
 
 #### IMPORTANT: "commit [submodule name]" Command Requirements
-When a user says "commit [submodule name]", you MUST complete ALL these steps in sequence:
+When a user says "commit [submodule name]", use these IMPROVED steps to avoid errors:
 
-1. **Navigate to submodule**: `cd [submodule name]`
-2. **Add and commit in submodule**: `git add . && git commit -m "Description of changes"`
-3. **Push submodule changes**: `git push` 
-4. **Return to parent**: `cd ..`
-5. **Add submodule reference**: `git add [submodule name]`
-6. **Commit parent update**: `git commit -m "Update [submodule name] submodule"`
-7. **Push parent changes**: `git push`
-8. **If no push access**: Submit PR for parent repository instead
+**Method 1 - Using git submodule foreach (RECOMMENDED):**
+```bash
+# Step 1: Commit to submodule using foreach
+git submodule foreach 'git add . && git commit -m "Description of changes" && git push origin HEAD:main'
 
-**⚠️ CRITICAL**: Steps 5-7 are REQUIRED. Simply committing to the submodule is incomplete - the parent repository must also be updated with the new submodule reference.
+# Step 2: Update parent repository 
+git submodule update --remote [submodule name]
+git add [submodule name] 
+git commit -m "Update [submodule name] submodule"
+git push
+```
+
+**Method 2 - Manual navigation (if Method 1 fails):**
+```bash
+# Only use if you can successfully cd into submodule directory
+cd [submodule name]
+git checkout main  # Ensure on main branch
+git add . && git commit -m "Description of changes"
+git push origin main
+cd ..
+git add [submodule name]
+git commit -m "Update [submodule name] submodule" 
+git push
+```
+
+**⚠️ CRITICAL**: 
+- Method 1 handles detached HEAD states automatically
+- Both methods require updating the parent repository
+- If git submodule foreach fails, the submodule may not exist or be corrupted
 
 #### Quick Commands for Submodules
 - **"commit [submodule name]"**: Complete 8-step workflow above
