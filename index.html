@@ -13,20 +13,9 @@
 <script type="text/javascript" src="team/js/common.js"></script>
 
 <script>
-// Create OS detection panel after DOM loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Create container for OS detection panel
-    const osContainer = document.createElement('div');
-    osContainer.id = 'os-detection-container';
-    
-    // Insert before README content
-    const contentDiv = document.querySelector('.content');
-    const readmeDiv = document.getElementById('readmeDiv');
-    if (contentDiv && readmeDiv) {
-        contentDiv.insertBefore(osContainer, readmeDiv);
-        createOSDetectionPanel('os-detection-container');
-    }
-});
+// Create OS detection panel using shared function
+autoCreateOSDetectionPanel('#commonSetupDiv');
+
 loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     // https://partnertools.github.io/webroot/
     // Process content after README loads into #readmeDiv
@@ -70,8 +59,8 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
       3. In your local file manager, right-click on "webroot" and choose "New Terminal at Folder", <br>
       &nbsp; &nbsp; then start your Command Line Interface (CLI) by pasting a few commands in your terminal window:<br>
     </div>
-
-  <div id="readmeDiv" class="card"></div>
+    <div id="commonSetupDiv"></div>
+    <div id="readmeDiv" class="card"></div>
 </div>
 </body>
 </html>

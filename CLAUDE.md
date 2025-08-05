@@ -8,7 +8,7 @@ Note: Uses nohup to run server in background and redirect output to avoid timeou
 
 ### Update all submodules:
 ```bash
-git submodule foreach 'git pull origin main || git pull origin master'
+git submodule update --remote --recursive
 ```
 
 ### Deploy all submodules:
@@ -28,6 +28,17 @@ cd ..
 ```
 
 ### Submodule Management
+
+This repository contains the following git submodules configured in `.gitmodules`:
+- **localsite** - https://github.com/ModelEarth/localsite
+- **feed** - https://github.com/modelearth/feed  
+- **swiper** - https://github.com/modelearth/swiper
+- **home** - https://github.com/ModelEarth/home
+- **products** - https://github.com/modelearth/products
+- **comparison** - https://github.com/modelearth/comparison
+- **team** - https://github.com/modelearth/team
+
+**IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
 #### IMPORTANT: "commit [submodule name]" Command Requirements
 When a user says "commit [submodule name]", use these IMPROVED steps to avoid errors:

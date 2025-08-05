@@ -1,8 +1,8 @@
-Run the following in your local "webroot" folder to start an http server on port 8887
+Run the following in your local "webroot" folder using Claude to start an http server on port 8887:
 
 	start server
 
-Or
+Or run without Claude.:
 
 	python -m http.server 8887
 
@@ -16,4 +16,4 @@ Then view pages at:
 [localhost:8887/feed](http://localhost:8887/feed/)  
 
 
-Also look at your code with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
+Look at the code in your webroot with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
