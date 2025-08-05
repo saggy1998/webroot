@@ -14,7 +14,7 @@
 
 <script>
 // Create OS detection panel using shared function
-autoCreateOSDetectionPanel('.content', '#readmeDiv');
+autoCreateOSDetectionPanel('#commonSetupDiv');
 
 loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     // https://partnertools.github.io/webroot/
@@ -59,8 +59,8 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
       3. In your local file manager, right-click on "webroot" and choose "New Terminal at Folder", <br>
       &nbsp; &nbsp; then start your Command Line Interface (CLI) by pasting a few commands in your terminal window:<br>
     </div>
-
-  <div id="readmeDiv" class="card"></div>
+    <div id="commonSetupDiv"></div>
+    <div id="readmeDiv" class="card"></div>
 </div>
 </body>
 </html>
