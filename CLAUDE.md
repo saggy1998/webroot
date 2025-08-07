@@ -8,6 +8,8 @@ Note: Uses nohup to run server in background and redirect output to avoid timeou
 
 ### Update all submodules:
 ```bash
+# Navigate to webroot first
+cd $(git rev-parse --show-toplevel)
 git submodule update --remote --recursive
 ```
 
@@ -40,11 +42,33 @@ This repository contains the following git submodules configured in `.gitmodules
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
+#### Repository Root Navigation
+**CRITICAL**: Always ensure you're in the correct repository before executing submodule commands:
+
+```bash
+# Navigate to webroot repository root (required for submodule operations)
+cd $(git rev-parse --show-toplevel)
+
+# Or manually navigate to your webroot directory
+# cd /path/to/your/webroot
+
+# Verify you're in the correct repository
+git remote -v
+# Should show: origin https://github.com/ModelEarth/webroot.git
+
+# If you see a different repository (like modelearth/team), navigate back to webroot first
+```
+
+**Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Use `git rev-parse --show-toplevel` to find the repository root or navigate to your webroot directory.
+
 #### IMPORTANT: "commit [submodule name]" Command Requirements
 When a user says "commit [submodule name]", use these IMPROVED steps to avoid errors:
 
 **Method 1 - Using git submodule foreach (RECOMMENDED):**
 ```bash
+# Step 0: ALWAYS navigate to webroot first
+cd $(git rev-parse --show-toplevel)
+
 # Step 1a: Check which submodules have changes first
 git submodule foreach 'git status'
 
@@ -60,12 +84,15 @@ git push
 
 **Method 2 - Manual navigation (if Method 1 fails):**
 ```bash
+# Step 0: ALWAYS start from webroot
+cd $(git rev-parse --show-toplevel)
+
 # Only use if you can successfully cd into submodule directory
 cd [submodule name]
 git checkout main  # Ensure on main branch
 git add . && git commit -m "Description of changes"
 git push origin main
-cd ..
+cd $(git rev-parse --show-toplevel)  # Return to webroot
 git add [submodule name]
 git commit -m "Update [submodule name] submodule" 
 git push
