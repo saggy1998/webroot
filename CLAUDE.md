@@ -155,16 +155,20 @@ When you type "confirm" or "less quick", remove it:
 
 ## Get trade repos
 
-The following clones repos the user has already forked so they can send a PR from their fork These trade repos won't be submodules since the typical site will only use the trade output via the existing comparison submodule folder.
+The following clones repos the user has already forked so they can send a PR from their fork. These trade repos won't be submodules since the typical site will only use the trade output via the existing comparison submodule folder.
+
+**IMPORTANT**: Always clone trade repos to the webroot root directory, not inside submodules.
 
 ```bash
-
 clone trade repos from [your github account]
-
 ```
 
 The above runs these commands:
 ```bash
+# Navigate to webroot repository root first
+cd $(git rev-parse --show-toplevel)
+
+# Clone trade repos to webroot root
 git clone https://github.com/[your github account]/exiobase exiobase
 git clone https://github.com/[your github account]/profile profile
 git clone https://github.com/[your github account]/useeio.js useeio.js
