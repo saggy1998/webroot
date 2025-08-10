@@ -24,7 +24,7 @@ Look at the code in your webroot with an editor like [Sublime Text](https://www.
 To contribute to our trade flow visualizations, run the following to fork and clone:  
 exiobase, profile, useeio.js and io
 
-	fork trade repos from [your github account]
+	fork trade repos to [your github account]
 	clone trade repos from [your github account]
 
 The above requires having GitHub CLI (gh) installed locally and authenticated with your GitHub account.

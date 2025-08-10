@@ -162,7 +162,7 @@ The following clones repos the user has already forked so they can send a PR fro
 This requires the GitHub CLI (gh) to be installed and authenticated with the user's GitHub account. After forking, users can then run the clone command to pull the forked repos locally.
 
 ```bash
-fork trade repos from [your github account]
+fork trade repos to [your github account]
 ```
 
 The above runs these commands:
