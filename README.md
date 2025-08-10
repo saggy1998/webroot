@@ -19,6 +19,14 @@ Then view pages at:
 
 Look at the code in your webroot with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
 
-To contribute to our trade flow visualization, fork exiobase, profile, io and useeio.js, then run:
+## Get Trade Flow Repos
 
+To contribute to our trade flow visualizations, run the following to fork and clone:  
+exiobase, profile, useeio.js and io
+
+	fork trade repos from [your github account]
 	clone trade repos from [your github account]
+
+The above requires having GitHub CLI (gh) installed locally and authenticated with your GitHub account.
+
+[Overview of repos (codechat)](https://model.earth/codechat/)
