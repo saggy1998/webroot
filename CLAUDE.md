@@ -29,7 +29,7 @@ gh pr create --title "Update [submodule name]" --body "Description of changes"
 cd ..
 ```
 
-### Submodule Management
+## Submodule Management
 
 This repository contains the following git submodules configured in `.gitmodules`:
 - **localsite** - https://github.com/ModelEarth/localsite
@@ -42,7 +42,7 @@ This repository contains the following git submodules configured in `.gitmodules
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
-#### Repository Root Navigation
+### Repository Root Navigation
 **CRITICAL**: Always ensure you're in the correct repository before executing submodule commands:
 
 ```bash
@@ -61,7 +61,7 @@ git remote -v
 
 **Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Use `git rev-parse --show-toplevel` to find the repository root or navigate to your webroot directory.
 
-#### IMPORTANT: "commit [submodule name]" Command Requirements
+### IMPORTANT: "commit [submodule name]" Command Requirements
 When a user says "commit [submodule name]", use these IMPROVED steps to avoid errors:
 
 **Method 1 - Using git submodule foreach (RECOMMENDED):**
@@ -106,24 +106,24 @@ git push
 - **NEW**: Use conditional `if [ "$name" = "submodule" ]` to target specific submodule and avoid "nothing to commit" errors from clean submodules
 - **NEW**: The `--recursive` flag ensures nested submodules are handled properly
 
-#### Quick Commands for Submodules
+### Quick Commands for Submodules
 - **"commit [submodule name]"**: Complete 8-step workflow above
 - **"push [submodule name]"**: Only push submodule changes (steps 1-3)
 - **"PR [submodule name]"**: Create pull request workflow
 
 When displaying "Issue Resolved" use the same checkbox icon as "Successfully Updated"
 
-#### Additional Notes
+### Additional Notes
 - Allow up to 12 minutes to pull repos (large repositories)
 - Always verify both submodule AND parent repository are updated
 
-### Git Commit Guidelines
+## Git Commit Guidelines
 - **NEVER add Claude Code attribution or co-authored-by lines to commits**
 - **NEVER add "🤖 Generated with [Claude Code]" or similar footers**
 - Keep commit messages clean and focused on the actual changes
 - Include a brief summary of changes in the commit text
 
-### Quick Commands
+## Quick Commands
 
 When you type "restart", run this single command to restart the server in seconds:
 ```bash
@@ -151,4 +151,22 @@ When you type "confirm" or "less quick", remove it:
   "Bash(git commit:*)",
   "Bash(git push:*)"
 ]
+```
+
+## Get trade repos
+
+The following clones repos the user has already forked so they can send a PR from their fork These trade repos won't be submodules since the typical site will only use the trade output via the existing comparison submodule folder.
+
+```bash
+
+clone trade repos from [your github account]
+
+```
+
+The above runs these commands:
+```bash
+git clone https://github.com/[your github account]/exiobase exiobase
+git clone https://github.com/[your github account]/profile profile
+git clone https://github.com/[your github account]/useeio.js useeio.js
+git clone https://github.com/[your github account]/io io
 ```

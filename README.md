@@ -18,3 +18,7 @@ Then view pages at:
 -->
 
 Look at the code in your webroot with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
+
+To contribute to our trade flow visualization, fork exiobase, profile, io and useeio.js, then run:
+
+	clone trade repos from [your github account]
