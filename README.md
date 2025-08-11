@@ -32,8 +32,8 @@ The above requires having GitHub CLI (gh) installed locally and authenticated wi
 
 ## How to deploy changes
 
-When changing a submodle, run with "team", etc as the submodule name.
+When changing a submodule, run to send a PR:
 
-	change to root and commit [submodule]
+	commit submodules
 
 When changing a cloned repo, commit the specific repo using Github Desktop. Then submit a PR through the Github.com website.
