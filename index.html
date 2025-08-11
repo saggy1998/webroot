@@ -32,7 +32,7 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
         myRepo = "modelearth";
     }
     
-    let linkString = "the <a href='https://github.com/" + myRepo + "/webroot/' target='github_fork'>github.com/" + myRepo + "/webroot</a>";
+    let linkString = "<a href='https://github.com/" + myRepo + "/webroot/' target='github_fork'>github.com/" + myRepo + "/webroot</a>";
     
     // Replace "the webroot repo" with linkString in the #textInPage div
     setTimeout(() => {
@@ -97,12 +97,10 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
       <h1>Webroot setup</h1><br>
 
       1. Install <a href="https://github.com/apps/desktop" target="github_desktop">Github Desktop</a><br>
-
-      2. Fork and clone the webroot repo - Green Button<br>
-      &nbsp; &nbsp; Choose "Open with Github Desktop" and "contribute to parent repo".<br>
-
-      3. In your local file manager, right-click on "webroot" and choose "New Terminal at Folder", <br>
-      &nbsp; &nbsp; then start your Command Line Interface (CLI) by pasting the commands below in your terminal window:<br>
+      2. Fork the webroot repo<br>
+      3. Click the Green Button on your fork and choose "Open with Github Desktop" to clone the repo.<br>
+      4. Choose "To contribute to the parent project" as you clone via Github Desktop.<br>
+      5. Start your Command Line Interface (CLI) using the following commands:<br>
     </div>
     <div id="commonSetupDiv"></div>
     <div id="readmeDiv" class="card"></div>
