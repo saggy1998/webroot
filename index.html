@@ -49,7 +49,8 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             let content = readmeDiv.innerHTML;
             
             // Detect current port from window.location
-            const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+            const currentPort = window.location.port;
+            const hasExplicitPort = currentPort !== '';
             
             // Detect webroot folder from current path
             const currentPathname = window.location.pathname;
@@ -62,8 +63,8 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
                 webrootFolder = pathSegments[0];
             }
             
-            // Replace localhost:8887 with current port if different
-            if (currentPort !== '8887') {
+            // Replace localhost:8887 with current port if different and port is explicitly in URL
+            if (hasExplicitPort && currentPort !== '8887') {
                 content = content.replace(/localhost:8887/g, `localhost:${currentPort}`);
                 
                 // Add port notice at the top
@@ -73,8 +74,13 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             
             // If we're in a webroot folder, insert it after "localhost:port/"
             if (webrootFolder) {
-                const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
-                content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+                if (hasExplicitPort) {
+                    const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
+                    content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+                } else {
+                    // No explicit port, just use localhost:8887/ pattern from README
+                    content = content.replace(/localhost:8887\//g, `localhost:8887/${webrootFolder}/`);
+                }
             }
             
             readmeDiv.innerHTML = content;
