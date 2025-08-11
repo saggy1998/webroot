@@ -39,6 +39,8 @@ This repository contains the following git submodules configured in `.gitmodules
 - **products** - https://github.com/modelearth/products
 - **comparison** - https://github.com/modelearth/comparison
 - **team** - https://github.com/modelearth/team
+- **projects** - https://github.com/modelearth/projects
+- **realitystream** - https://github.com/modelearth/realitystream
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
