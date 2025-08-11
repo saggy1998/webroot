@@ -51,16 +51,19 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             // Detect current port from window.location
             const currentPort = window.location.port;
             const hasExplicitPort = currentPort !== '';
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             
             // Detect webroot folder from current path
             const currentPathname = window.location.pathname;
             const pathSegments = currentPathname.split('/').filter(segment => segment);
             
-            // Check if we're in a webroot container (has a parent folder)
+            // Check if we're in a webroot container (has a parent folder) and on localhost
             let webrootFolder = '';
-            if (pathSegments.length > 0) {
-                // We have path segments, likely in a webroot folder
-                webrootFolder = pathSegments[0];
+            if (pathSegments.length > 0 && isLocalhost) {
+                // Only use webroot folder for localhost URLs with explicit ports
+                if (hasExplicitPort) {
+                    webrootFolder = pathSegments[0];
+                }
             }
             
             // Replace localhost:8887 with current port if different and port is explicitly in URL
@@ -72,15 +75,10 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
                 content = portNotice + content;
             }
             
-            // If we're in a webroot folder, insert it after "localhost:port/"
+            // If we're in a webroot folder on localhost with explicit port, insert it after "localhost:port/"
             if (webrootFolder) {
-                if (hasExplicitPort) {
-                    const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
-                    content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
-                } else {
-                    // No explicit port, just use localhost:8887/ pattern from README
-                    content = content.replace(/localhost:8887\//g, `localhost:8887/${webrootFolder}/`);
-                }
+                const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
+                content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
             }
             
             readmeDiv.innerHTML = content;

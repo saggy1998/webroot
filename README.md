@@ -29,3 +29,11 @@ To contribute to our trade flow visualizations for **Data Science**, run the fol
 The above requires having GitHub CLI (gh) installed locally and authenticated with your GitHub account.
 
 [Overview of repos (codechat)](https://model.earth/codechat/)
+
+## How to deploy changes
+
+When changing a submodle, run with "team", etc as the submodule name.
+
+	change to root and commit [submodule]
+
+When changing a cloned repo, commit the specific repo using Github Desktop. Then submit a PR through the Github.com website.
