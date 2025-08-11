@@ -32,8 +32,18 @@ The above requires having GitHub CLI (gh) installed locally and authenticated wi
 
 ## How to deploy changes
 
-When changing a submodule, run to send a PR:
+Make commits often (at least hourly).
+Append nopr" or "No PR" if you are not yet ready to send a Pull Request.
 
-	commit submodules
+When making any change, run to send a PR. This will also commit changes in submodules and forks.
 
-When changing a cloned repo, commit the specific repo using Github Desktop. Then submit a PR through the Github.com website.
+	commit
+
+Addtional options:
+
+	commit [folder name]  # commit a specific submodule or fork
+	commit submodules  # commit changes from all submodules changed
+	commit forks  # commit the 4 forks added for the trade flow
+
+
+Or when changing a cloned repo, commit the specific repo using Github Desktop. Then submit a PR through the Github.com website.
