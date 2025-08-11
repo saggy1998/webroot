@@ -41,6 +41,45 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             textInPage.innerHTML = textInPage.innerHTML.replace(/the webroot repo/g, linkString);
         }
     }, 100);
+    
+    // Process webroot path and port adjustments in #readmeDiv after README loads
+    //setTimeout(() => {
+        const readmeDiv = document.getElementById('readmeDiv');
+        if (readmeDiv) {
+            let content = readmeDiv.innerHTML;
+            
+            // Detect current port from window.location
+            const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+            
+            // Detect webroot folder from current path
+            const currentPathname = window.location.pathname;
+            const pathSegments = currentPathname.split('/').filter(segment => segment);
+            
+            // Check if we're in a webroot container (has a parent folder)
+            let webrootFolder = '';
+            if (pathSegments.length > 0) {
+                // We have path segments, likely in a webroot folder
+                webrootFolder = pathSegments[0];
+            }
+            
+            // Replace localhost:8887 with current port if different
+            if (currentPort !== '8887') {
+                content = content.replace(/localhost:8887/g, `localhost:${currentPort}`);
+                
+                // Add port notice at the top
+                const portNotice = `<div style="background-color: #e7f3ff; border: 1px solid #b3d9ff; padding: 10px; margin-bottom: 15px; border-radius: 5px;"><strong>Your current port ${currentPort} has been used to replace 8887 in the display below.</strong></div>`;
+                content = portNotice + content;
+            }
+            
+            // If we're in a webroot folder, insert it after "localhost:port/"
+            if (webrootFolder) {
+                const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
+                content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+            }
+            
+            readmeDiv.innerHTML = content;
+        }
+    //}, 200);
 });
 </script>
 
