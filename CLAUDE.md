@@ -354,9 +354,16 @@ for repo in exiobase profile useeio.js io; do
         echo "⚠️ Push failed for $repo repository"
       fi
       
+      # Only create PR for forks (when you don't have direct push access to parent)
       if [ "$SKIP_PR" != "true" ]; then
-        gh pr create --title "Update $repo" --body "Automated update from webroot integration" --base main --head main || echo "PR creation failed for $repo"
-        echo "🔄 Created PR for $repo repository"
+        # Check if this is a fork by comparing remote URL with expected parent
+        REMOTE_URL=$(git remote get-url origin)
+        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && ! [[ "$REMOTE_URL" =~ "ModelEarth/$repo" ]]; then
+          gh pr create --title "Update $repo" --body "Automated update from webroot integration" --base main --head main || echo "PR creation failed for $repo"
+          echo "🔄 Created PR for $repo fork to parent repository"
+        else
+          echo "✅ Direct push succeeded - no PR needed for $repo"
+        fi
       fi
     fi
     cd ..
@@ -364,7 +371,15 @@ for repo in exiobase profile useeio.js io; do
 done
 ```
 
-**Note**: This command requires GitHub CLI (gh) to be installed and authenticated. It will create PRs for all trade repo forks unless 'nopr' is specified. Use 'commit forks nopr' to skip PR creation.
+**Note**: This command requires GitHub CLI (gh) to be installed and authenticated for PR creation. It will create PRs for all trade repo forks unless 'nopr' is specified. Use 'commit forks nopr' to skip PR creation.
+
+**Common Issues:**
+- **Repository moved errors**: Update remote URLs if you see "This repository moved" messages:
+  ```bash
+  cd [repo-name]
+  git remote set-url origin [new-url]
+  ```
+- **GitHub CLI authentication**: Run `gh auth login` to authenticate with GitHub before using PR features
 
 ### Complete Commit Workflow
 
@@ -434,9 +449,16 @@ for repo in exiobase profile useeio.js io; do
         echo "⚠️ Push failed for $repo repository"
       fi
       
+      # Only create PR for forks (when you don't have direct push access to parent)
       if [ "$SKIP_PR" != "true" ]; then
-        gh pr create --title "Update $repo" --body "Automated update from comprehensive webroot commit" --base main --head main || echo "PR creation failed for $repo"
-        echo "🔄 Created PR for $repo repository"
+        # Check if this is a fork by comparing remote URL with expected parent
+        REMOTE_URL=$(git remote get-url origin)
+        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && ! [[ "$REMOTE_URL" =~ "ModelEarth/$repo" ]]; then
+          gh pr create --title "Update $repo" --body "Automated update from comprehensive webroot commit" --base main --head main || echo "PR creation failed for $repo"
+          echo "🔄 Created PR for $repo fork to parent repository"
+        else
+          echo "✅ Direct push succeeded - no PR needed for $repo"
+        fi
       fi
     fi
     cd ..
