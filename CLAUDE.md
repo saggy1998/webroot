@@ -46,23 +46,30 @@ This repository contains the following git submodules configured in `.gitmodules
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
 ### Repository Root Navigation
-**CRITICAL**: Always ensure you're in the correct repository before executing submodule commands:
+**CRITICAL**: Always ensure you're in the webroot repository before executing any commands. The CLI session is pointed to the webroot directory, and all operations must start from there:
 
 ```bash
-# Navigate to webroot repository root (required for submodule operations)
+# ALWAYS navigate to webroot repository root first (required for all operations)
 cd $(git rev-parse --show-toplevel)
 
-# Or manually navigate to your webroot directory
-# cd /path/to/your/webroot
-
-# Verify you're in the correct repository
+# Verify you're in the correct webroot repository
 git remote -v
 # Should show: origin https://github.com/ModelEarth/webroot.git
 
-# If you see a different repository (like modelearth/team), navigate back to webroot first
+# If git rev-parse returns the wrong repository (submodule/trade repo), manually navigate to webroot
+# Use your system's webroot path, never hardcode paths in documentation
 ```
 
-**Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Use `git rev-parse --show-toplevel` to find the repository root or navigate to your webroot directory.
+**IMPORTANT FILE PATH POLICY**: 
+- **NEVER hardcode specific file paths** from any user's computer in code or documentation
+- **NEVER include paths like `/Users/username/` or `C:\Users\`** in any commands or examples
+- Always use relative paths, environment variables, or git commands to determine paths dynamically
+- Use `$(git rev-parse --show-toplevel)` when already in the correct repository context
+- If `git rev-parse --show-toplevel` returns incorrect paths (submodule/trade repo instead of webroot), the user must manually navigate to their webroot directory using their system's actual path
+
+**IMPORTANT**: The `git rev-parse --show-toplevel` command returns the top-level directory of whatever git repository you're currently in. If you're inside a submodule or trade repo, it will return that repository's root instead of the webroot. In such cases, you must manually navigate to your actual webroot directory location on your system.
+
+**Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Navigate back to your webroot directory using your system's actual webroot path before running any commands.
 
 ### IMPORTANT: "commit [name]" Command Requirements
 When a user says "commit [name]", use this intelligent fallback strategy with automatic PR creation:
@@ -206,6 +213,154 @@ When displaying "Issue Resolved" use the same checkbox icon as "Successfully Upd
 - **NEVER add "🤖 Generated with [Claude Code]" or similar footers**
 - Keep commit messages clean and focused on the actual changes
 - Include a brief summary of changes in the commit text
+
+## Comprehensive Update Command
+
+### Update
+When you type "Update", run this comprehensive update workflow that pulls from all parent repos, updates submodules and forks, and prompts for pushes:
+
+```bash
+update
+```
+
+The above executes this comprehensive update workflow:
+```bash
+# CRITICAL: Navigate to webroot repository root first (never use hardcoded paths)
+cd $(git rev-parse --show-toplevel)
+
+# Verify we're in webroot - if not, user must manually navigate to their webroot directory
+CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null)
+if [[ ! "$CURRENT_REMOTE" =~ "webroot" ]]; then
+  echo "⚠️ ERROR: Not in webroot repository. Please manually navigate to your webroot directory first."
+  echo "Current repository: $CURRENT_REMOTE"
+  exit 1
+fi
+
+echo "🔄 Starting comprehensive update workflow from webroot..."
+
+# Step 1: Pull any remote changes in current webroot first
+echo "📥 Pulling latest changes from webroot remote..."
+git pull origin main || echo "⚠️ Pull conflicts in webroot - manual resolution needed"
+
+# Step 2: Update webroot from parent ModelEarth/webroot repository (if this is a fork)
+echo "📥 Updating webroot from parent ModelEarth/webroot..."
+WEBROOT_REMOTE=$(git remote get-url origin)
+if [[ "$WEBROOT_REMOTE" =~ "partnertools" ]]; then
+  echo "⚠️ Skipping partnertools webroot - not updating from parent"
+else
+  # Add upstream if it doesn't exist (for forks)
+  if ! git remote | grep -q upstream; then
+    git remote add upstream https://github.com/ModelEarth/webroot.git
+  fi
+  
+  # Fetch and merge from upstream
+  git fetch upstream
+  git merge upstream/main --no-edit || echo "⚠️ Merge conflicts in webroot - manual resolution needed"
+fi
+
+# Step 2: Update all submodules from their respective ModelEarth parent repos
+echo "📥 Updating submodules from their ModelEarth parents..."
+git submodule foreach '
+  echo "Updating submodule: $name"
+  CURRENT_REMOTE=$(git remote get-url origin)
+  
+  # Skip partnertools repos
+  if [[ "$CURRENT_REMOTE" =~ "partnertools" ]]; then
+    echo "⚠️ Skipping partnertools submodule: $name"
+  else
+    # Add upstream remote for ModelEarth parent if it doesnt exist
+    if ! git remote | grep -q upstream; then
+      # Determine the correct parent repo URL
+      if [[ "$name" == "localsite" ]] || [[ "$name" == "home" ]]; then
+        git remote add upstream https://github.com/ModelEarth/$name.git
+      else
+        git remote add upstream https://github.com/modelearth/$name.git
+      fi
+    fi
+    
+    # Fetch and merge from upstream
+    git fetch upstream 2>/dev/null || git fetch upstream
+    git merge upstream/main --no-edit 2>/dev/null || git merge upstream/master --no-edit 2>/dev/null || echo "⚠️ Merge conflicts in $name - manual resolution needed"
+  fi
+'
+
+# Step 3: Update webroot submodule references
+echo "🔄 Updating webroot submodule references..."
+git submodule update --remote --recursive
+if [ -n "$(git status --porcelain)" ]; then
+  echo "✅ Submodule references updated in webroot"
+else
+  echo "✅ All submodule references already up to date"
+fi
+
+# Step 4: Update trade repo forks from their ModelEarth parents
+echo "📥 Updating trade repo forks from ModelEarth parents..."
+for repo in exiobase profile useeio.js io; do
+  if [ -d "$repo" ]; then
+    cd "$repo"
+    echo "Updating trade repo: $repo"
+    
+    # First pull any remote changes from origin
+    echo "📥 Pulling latest changes from $repo remote..."
+    git pull origin main || echo "⚠️ Pull conflicts in $repo - manual resolution needed"
+    
+    TRADE_REMOTE=$(git remote get-url origin)
+    # Skip partnertools repos
+    if [[ "$TRADE_REMOTE" =~ "partnertools" ]]; then
+      echo "⚠️ Skipping partnertools trade repo: $repo"
+    else
+      # Add upstream remote for ModelEarth parent if it doesnt exist
+      if ! git remote | grep -q upstream; then
+        git remote add upstream https://github.com/modelearth/$repo.git
+      fi
+      
+      # Fetch and merge from upstream parent
+      git fetch upstream
+      git merge upstream/main --no-edit || echo "⚠️ Merge conflicts in $repo - manual resolution needed"
+    fi
+    cd ..
+  else
+    echo "⚠️ Trade repo not found: $repo"
+  fi
+done
+
+echo "✅ Update workflow completed!"
+echo ""
+echo "📤 PUSH RECOMMENDATIONS:"
+echo "Review the changes and consider pushing your updates:"
+echo ""
+echo "🔹 Webroot: If you have changes in your webroot fork, push to your fork and create PR to ModelEarth/webroot"
+echo "   Commands: git add . && git commit -m \"Merge updates from upstream\" && git push origin main"
+echo "   Then: gh pr create --title \"Update from upstream\" --body \"Merge latest changes from ModelEarth/webroot\""
+echo ""
+echo "🔹 Submodules: If submodules have changes, push to their respective parent repos"
+echo "   Use: commit submodules (to push all) or commit [submodule-name] (for specific ones)"
+echo ""
+echo "🔹 Trade Repos: If trade repos have changes, push to your forks and create PRs to ModelEarth parents"
+echo "   Use: commit forks (to push all trade repos and create PRs)"
+echo ""
+echo "🔹 Complete Push: To push everything at once:"
+echo "   Use: commit (pushes webroot, all submodules, and all forks with PR creation)"
+echo ""
+echo "⚠️ NOTE: None of these operations involve partnertools repositories - they are intentionally excluded"
+```
+
+**Update Command Features:**
+- **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories
+- **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks
+- **Partnertools Exclusion**: Completely skips any repositories associated with partnertools GitHub account
+- **Merge Strategy**: Uses automatic merge with no-edit to incorporate upstream changes
+- **Conflict Handling**: Reports merge conflicts for manual resolution when they occur  
+- **Status Reporting**: Provides clear feedback on what was updated and any issues encountered
+- **Push Guidance**: Prompts user with specific commands for pushing changes back to forks and parent repos
+- **Comprehensive Workflow**: Handles webroot, all submodules, and all trade repositories in one command
+
+**Post-Update Recommendations:**
+After running "Update", review changes and use these commands as needed:
+- `commit` - Push all changes (webroot + submodules + forks) with PR creation
+- `commit submodules` - Push only submodule changes  
+- `commit forks` - Push only trade repo fork changes with PRs
+- `commit [specific-name]` - Push changes for a specific repository
 
 ## Quick Commands
 

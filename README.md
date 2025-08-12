@@ -32,11 +32,14 @@ The above requires having GitHub CLI (gh) installed locally and authenticated wi
 
 ## How to deploy changes
 
-Make commits often (at least hourly).
+Update and make commits often (at least hourly).
 Append nopr" or "No PR" if you are not yet ready to send a Pull Request.
 
-When making any change, run to send a PR. This will also commit changes in submodules and forks.
+Run "update" hourly to safely pull updates from the ModelEarth parent repositories.
 
+When making any change, run "commit" to send a PR. This will also commit changes in submodules and forks.
+
+	update
 	commit
 
 Addtional options:
