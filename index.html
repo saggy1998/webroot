@@ -28,11 +28,11 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     const githubPagesMatch = currentPath.match(/\/\/([^.]+)\.github\.io/);
     if (githubPagesMatch && githubPagesMatch[1]) {
         myRepo = githubPagesMatch[1];
-    } else if (currentPath.includes("localhost")) {
+    } else if (currentPath.includes("localhost") || currentPath.includes("model.earth")) {
         myRepo = "modelearth";
     }
     
-    let linkString = "the <a href='https://github.com/" + myRepo + "/webroot/' target='github_fork'>github.com/" + myRepo + "/webroot</a>";
+    let linkString = "<a href='https://github.com/" + myRepo + "/webroot/' target='github_fork'>github.com/" + myRepo + "/webroot</a>";
     
     // Replace "the webroot repo" with linkString in the #textInPage div
     setTimeout(() => {
@@ -41,6 +41,49 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             textInPage.innerHTML = textInPage.innerHTML.replace(/the webroot repo/g, linkString);
         }
     }, 100);
+    
+    // Process webroot path and port adjustments in #readmeDiv after README loads
+    //setTimeout(() => {
+        const readmeDiv = document.getElementById('readmeDiv');
+        if (readmeDiv) {
+            let content = readmeDiv.innerHTML;
+            
+            // Detect current port from window.location
+            const currentPort = window.location.port;
+            const hasExplicitPort = currentPort !== '';
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            // Detect webroot folder from current path
+            const currentPathname = window.location.pathname;
+            const pathSegments = currentPathname.split('/').filter(segment => segment);
+            
+            // Check if we're in a webroot container (has a parent folder) and on localhost
+            let webrootFolder = '';
+            if (pathSegments.length > 0 && isLocalhost) {
+                // Only use webroot folder for localhost URLs with explicit ports
+                if (hasExplicitPort) {
+                    webrootFolder = pathSegments[0];
+                }
+            }
+            
+            // Replace localhost:8887 with current port if different and port is explicitly in URL
+            if (hasExplicitPort && currentPort !== '8887') {
+                content = content.replace(/localhost:8887/g, `localhost:${currentPort}`);
+                
+                // Add port notice at the top
+                const portNotice = `<div style="background-color: #e7f3ff; border: 1px solid #b3d9ff; padding: 10px; margin-bottom: 15px; border-radius: 5px;"><strong>Your current port ${currentPort} has been used to replace 8887 in the display below.</strong></div>`;
+                content = portNotice + content;
+            }
+            
+            // If we're in a webroot folder on localhost with explicit port, insert it after "localhost:port/"
+            if (webrootFolder) {
+                const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
+                content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+            }
+            
+            readmeDiv.innerHTML = content;
+        }
+    //}, 200);
 });
 </script>
 
@@ -49,15 +92,13 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
 <body>
 <div class="content contentpadding">
     <div class="card" id="textInPage">
-      <h1>Webroot setup</h1><br>
+      <h1>Webroot setup</h1>
 
       1. Install <a href="https://github.com/apps/desktop" target="github_desktop">Github Desktop</a><br>
-
-      2. Fork and clone the webroot repo - Green Button<br>
-      &nbsp; &nbsp; Choose "Open with Github Desktop" and "contribute to parent repo".<br>
-
-      3. In your local file manager, right-click on "webroot" and choose "New Terminal at Folder", <br>
-      &nbsp; &nbsp; then start your Command Line Interface (CLI) by pasting a few commands in your terminal window:<br>
+      2. Fork the webroot repo<br>
+      3. Click the Green Button on your fork and choose "Open with Github Desktop" to clone the repo.<br>
+      4. Choose "To contribute to the parent project" as you clone via Github Desktop.<br>
+      5. Start your Command Line Interface (CLI) using the following commands:<br>
     </div>
     <div id="commonSetupDiv"></div>
     <div id="readmeDiv" class="card"></div>

@@ -19,3 +19,12 @@
 [submodule "team"]
 	path = team
 	url = https://github.com/modelearth/team
+[submodule "realitystream"]
+	path = realitystream
+	url = https://github.com/modelearth/realitystream
+[submodule "projects"]
+	path = projects
+	url = https://github.com/modelearth/projects
+[submodule "cloud"]
+	path = cloud
+	url = https://github.com/modelearth/cloud
