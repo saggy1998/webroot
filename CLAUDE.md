@@ -623,3 +623,49 @@ done
 ```
 
 **Note**: This is the most comprehensive commit command that handles all repository types in the webroot ecosystem with automatic PR fallback when push permissions are denied. Use 'commit nopr' to skip all PR creation. It will only process repositories that have actual changes.
+
+
+### Background Development Rust Server resides in "team" submodule folder (ALWAYS USE THIS)
+
+**IMPORTANT**: All Rust development occurs in the `team/` submodule directory. Always navigate to `team/` before running Rust commands.
+
+```bash
+# Navigate to team directory first
+cd team
+
+# ALWAYS use this command to start server - keeps running in background
+nohup cargo run serve > server.log 2>&1 &
+
+# Check if dev server is running
+curl http://localhost:8081/api/health
+
+# Stop dev background server
+lsof -ti:8081 | xargs kill -9
+```
+
+#### Rust Development Commands (run from team/ directory)
+```bash
+# Build and Run
+cargo build                  # Build the project
+cargo run -- serve         # Start REST API server (blocks terminal - not recommended)
+cargo run -- init-db       # Initialize database schema
+cargo check                 # Check code without building
+cargo clippy                # Run linting
+cargo test                  # Run tests
+
+# Database Management
+cargo run -- init-db       # Create all tables with relationships and constraints
+```
+
+#### Environment Configuration
+- Server host/port configurable via `SERVER_HOST`/`SERVER_PORT` environment variables
+- **Primary Database**: PostgreSQL (COMMONS_HOST in .env file)
+- **Trade Flow Database**: PostgreSQL (EXIOBASE_HOST in .env file)
+- Store auth keys in separate config file excluded by `.gitignore`
+
+#### Alternative Commands (NOT RECOMMENDED)
+- `cargo run serve` - Blocks terminal, stops when you exit (DO NOT USE)
+- `cargo run -- serve` - Same issue, blocks terminal (DO NOT USE)
+
+#### Project Type
+This is a **project posting, assignment and to-do tracking system** - a CRM-style tool for managing public-facing listings with searchable directories, team collaboration, and AI integration using Gemini.
