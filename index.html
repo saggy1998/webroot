@@ -38,7 +38,27 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     setTimeout(() => {
         const textInPage = document.getElementById('textInPage');
         if (textInPage) {
+            // Preserve field values before innerHTML replacement
+            const gitAccountField = document.getElementById("gitAccount");
+            const myWebrootForkNameField = document.getElementById("myWebrootForkName");
+            const gitAccountValue = gitAccountField ? gitAccountField.value : '';
+            const myWebrootForkNameValue = myWebrootForkNameField ? myWebrootForkNameField.value : '';
+            
+            // Replace the content
             textInPage.innerHTML = textInPage.innerHTML.replace(/the webroot repo/g, linkString);
+            
+            // Restore field values after replacement
+            const newGitAccountField = document.getElementById("gitAccount");
+            const newMyWebrootForkNameField = document.getElementById("myWebrootForkName");
+            if (newGitAccountField && gitAccountValue) {
+                newGitAccountField.value = gitAccountValue;
+            }
+            if (newMyWebrootForkNameField && myWebrootForkNameValue) {
+                newMyWebrootForkNameField.value = myWebrootForkNameValue;
+            }
+            
+            // Re-initialize fields from localStorage if values were lost
+            initializeGitFields();
         }
     }, 100);
     
@@ -79,12 +99,111 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             if (webrootFolder) {
                 const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
                 content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+                
+                // Populate the #myWebrootForkName field if webroot folder is detected and different from "webroot"
+                if (webrootFolder !== "webroot") {
+                    setTimeout(() => {
+                        const webrootForkNameField = document.getElementById("myWebrootForkName");
+                        if (webrootForkNameField && !webrootForkNameField.value) {
+                            webrootForkNameField.value = webrootFolder;
+                            updateGitAccountFields(); // Update storage and links
+                        }
+                    }, 100);
+                }
             }
             
             readmeDiv.innerHTML = content;
         }
     //}, 200);
 });
+
+// Function to update git account fields and browser storage
+function updateGitAccountFields() {
+    const gitAccount = document.getElementById("gitAccount").value;
+    const myWebrootForkName = document.getElementById("myWebrootForkName").value || "webroot";
+    
+    // Store in localStorage using same cache as localsite - store even if empty to clear cache
+    localStorage.gitAccount = gitAccount;
+    
+    // Only store webroot fork name if it's different from "webroot"
+    if (myWebrootForkName && myWebrootForkName !== "webroot") {
+        localStorage.myWebrootForkName = myWebrootForkName;
+    } else {
+        localStorage.removeItem('myWebrootForkName');
+    }
+    
+    // Update the webrootFork link
+    updateWebrootForkLink();
+}
+
+// Function to update the webroot fork link
+function updateWebrootForkLink() {
+    const gitAccount = document.getElementById("gitAccount").value || localStorage.gitAccount;
+    const myWebrootForkName = document.getElementById("myWebrootForkName").value || localStorage.myWebrootForkName || "webroot";
+    const webrootForkSpan = document.getElementById("webrootFork");
+    
+    if (gitAccount && webrootForkSpan) {
+        const linkUrl = `https://github.com/${gitAccount}/${myWebrootForkName}`;
+        webrootForkSpan.innerHTML = `<a href="${linkUrl}" target="github_fork">your webroot fork</a>`;
+    }
+}
+
+// Initialize fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize immediately if elements exist
+    initializeGitFields();
+    
+    // Also initialize after waitForElm to ensure they're loaded
+    waitForElm('#gitAccount').then((elm) => {
+        initializeGitFields();
+    });
+});
+
+function initializeGitFields() {
+    // Load from localStorage if available
+    const gitAccountField = document.getElementById("gitAccount");
+    const myWebrootForkNameField = document.getElementById("myWebrootForkName");
+    
+    if (gitAccountField && localStorage.gitAccount && !gitAccountField.value) {
+        gitAccountField.value = localStorage.gitAccount;
+    }
+    if (myWebrootForkNameField && localStorage.myWebrootForkName && !myWebrootForkNameField.value) {
+        myWebrootForkNameField.value = localStorage.myWebrootForkName;
+    }
+    
+    // Add keypress event listeners for clearing cache on Enter when field is empty
+    if (gitAccountField) {
+        gitAccountField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim() === '') {
+                localStorage.removeItem('gitAccount');
+                updateGitAccountFields();
+            }
+        });
+    }
+    
+    if (myWebrootForkNameField) {
+        myWebrootForkNameField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim() === '') {
+                localStorage.removeItem('myWebrootForkName');
+                updateGitAccountFields();
+            }
+        });
+    }
+    
+    // Update the link
+    updateWebrootForkLink();
+    
+    // Re-initialize after a delay to ensure persistence
+    setTimeout(() => {
+        if (gitAccountField && localStorage.gitAccount && !gitAccountField.value) {
+            gitAccountField.value = localStorage.gitAccount;
+        }
+        if (myWebrootForkNameField && localStorage.myWebrootForkName && !myWebrootForkNameField.value) {
+            myWebrootForkNameField.value = localStorage.myWebrootForkName;
+        }
+        updateWebrootForkLink();
+    }, 500);
+}
 </script>
 
 </head>
@@ -92,11 +211,21 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
 <body>
 <div class="content contentpadding">
     <div class="card" id="textInPage">
-      <h1>Webroot setup</h1>
+      <div style="float: right; margin-bottom: 15px;">
+        <div style="margin-bottom: 8px;">
+          <label for="gitAccount" style="font-size: 14px;">Your GitHub Account</label><br>
+          <input type="text" id="gitAccount" class="textInput" style="width:150px; font-size: 14px;" onfocus="this.select()" oninput="updateGitAccountFields()">
+        </div>
+        <div>
+          <label for="myWebrootForkName" style="font-size: 14px;">Webroot Fork Name</label><br>
+          <input type="text" id="myWebrootForkName" class="textInput" style="width:150px; font-size: 14px;" value="webroot" onfocus="this.select()" oninput="updateGitAccountFields()">
+        </div>
+      </div>
 
+      <h1>Webroot setup</h1>
       1. Install <a href="https://github.com/apps/desktop" target="github_desktop">Github Desktop</a><br>
       2. Fork the webroot repo<br>
-      3. Click the Green Button on your fork and choose "Open with Github Desktop" to clone the repo.<br>
+      3. Click the Green Button on <span id="webrootFork">your webroot fork</span> and choose "Open with Github Desktop" to clone the repo.<br>
       4. Choose "To contribute to the parent project" as you clone via Github Desktop.<br>
       5. Start your Command Line Interface (CLI) using the following commands:<br>
     </div>
