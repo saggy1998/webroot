@@ -11,6 +11,7 @@
 <link type="text/css" rel="stylesheet" href="team/css/common.css" />
 <script type="text/javascript" src="localsite/js/localsite.js?showheader=true&showsearch=true"></script>
 <script type="text/javascript" src="team/js/common.js"></script>
+<script type="text/javascript" src="team/js/setup.js"></script>
 
 <script>
 // Create OS detection panel using shared function
@@ -57,10 +58,15 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
                 newMyWebrootForkNameField.value = myWebrootForkNameValue;
             }
             
-            // Re-initialize fields from localStorage if values were lost
-            initializeGitFields();
+            // Fields will be initialized when setupGitAccountFields is called later
         }
     }, 100);
+    
+    // Setup webroot setup content and Git account fields after content processing
+    setTimeout(() => {
+        setupWebrootSetup('webrootSetup');
+        setupGitAccountFields('textInPage');
+    }, 200);
     
     // Process webroot path and port adjustments in #readmeDiv after README loads
     //setTimeout(() => {
@@ -117,93 +123,6 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     //}, 200);
 });
 
-// Function to update git account fields and browser storage
-function updateGitAccountFields() {
-    const gitAccount = document.getElementById("gitAccount").value;
-    const myWebrootForkName = document.getElementById("myWebrootForkName").value || "webroot";
-    
-    // Store in localStorage using same cache as localsite - store even if empty to clear cache
-    localStorage.gitAccount = gitAccount;
-    
-    // Only store webroot fork name if it's different from "webroot"
-    if (myWebrootForkName && myWebrootForkName !== "webroot") {
-        localStorage.myWebrootForkName = myWebrootForkName;
-    } else {
-        localStorage.removeItem('myWebrootForkName');
-    }
-    
-    // Update the webrootFork link
-    updateWebrootForkLink();
-}
-
-// Function to update the webroot fork link
-function updateWebrootForkLink() {
-    const gitAccount = document.getElementById("gitAccount").value || localStorage.gitAccount;
-    const myWebrootForkName = document.getElementById("myWebrootForkName").value || localStorage.myWebrootForkName || "webroot";
-    const webrootForkSpan = document.getElementById("webrootFork");
-    
-    if (gitAccount && webrootForkSpan) {
-        const linkUrl = `https://github.com/${gitAccount}/${myWebrootForkName}`;
-        webrootForkSpan.innerHTML = `<a href="${linkUrl}" target="github_fork">your webroot fork</a>`;
-    }
-}
-
-// Initialize fields on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize immediately if elements exist
-    initializeGitFields();
-    
-    // Also initialize after waitForElm to ensure they're loaded
-    waitForElm('#gitAccount').then((elm) => {
-        initializeGitFields();
-    });
-});
-
-function initializeGitFields() {
-    // Load from localStorage if available
-    const gitAccountField = document.getElementById("gitAccount");
-    const myWebrootForkNameField = document.getElementById("myWebrootForkName");
-    
-    if (gitAccountField && localStorage.gitAccount && !gitAccountField.value) {
-        gitAccountField.value = localStorage.gitAccount;
-    }
-    if (myWebrootForkNameField && localStorage.myWebrootForkName && !myWebrootForkNameField.value) {
-        myWebrootForkNameField.value = localStorage.myWebrootForkName;
-    }
-    
-    // Add keypress event listeners for clearing cache on Enter when field is empty
-    if (gitAccountField) {
-        gitAccountField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && this.value.trim() === '') {
-                localStorage.removeItem('gitAccount');
-                updateGitAccountFields();
-            }
-        });
-    }
-    
-    if (myWebrootForkNameField) {
-        myWebrootForkNameField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && this.value.trim() === '') {
-                localStorage.removeItem('myWebrootForkName');
-                updateGitAccountFields();
-            }
-        });
-    }
-    
-    // Update the link
-    updateWebrootForkLink();
-    
-    // Re-initialize after a delay to ensure persistence
-    setTimeout(() => {
-        if (gitAccountField && localStorage.gitAccount && !gitAccountField.value) {
-            gitAccountField.value = localStorage.gitAccount;
-        }
-        if (myWebrootForkNameField && localStorage.myWebrootForkName && !myWebrootForkNameField.value) {
-            myWebrootForkNameField.value = localStorage.myWebrootForkName;
-        }
-        updateWebrootForkLink();
-    }, 500);
-}
 </script>
 
 </head>
@@ -211,23 +130,7 @@ function initializeGitFields() {
 <body>
 <div class="content contentpadding">
     <div class="card" id="textInPage">
-      <div style="float: right; margin-bottom: 15px;">
-        <div style="margin-bottom: 8px;">
-          <label for="gitAccount" style="font-size: 14px;">Your GitHub Account</label><br>
-          <input type="text" id="gitAccount" class="textInput" style="width:150px; font-size: 14px;" onfocus="this.select()" oninput="updateGitAccountFields()">
-        </div>
-        <div>
-          <label for="myWebrootForkName" style="font-size: 14px;">Webroot Fork Name</label><br>
-          <input type="text" id="myWebrootForkName" class="textInput" style="width:150px; font-size: 14px;" value="webroot" onfocus="this.select()" oninput="updateGitAccountFields()">
-        </div>
-      </div>
-
-      <h1>Webroot setup</h1>
-      1. Install <a href="https://github.com/apps/desktop" target="github_desktop">Github Desktop</a><br>
-      2. Fork the webroot repo<br>
-      3. Click the Green Button on <span id="webrootFork">your webroot fork</span> and choose "Open with Github Desktop" to clone the repo.<br>
-      4. Choose "To contribute to the parent project" as you clone via Github Desktop.<br>
-      5. Start your Command Line Interface (CLI) using the following commands:<br>
+      <div id="webrootSetup"></div>
     </div>
     <div id="commonSetupDiv"></div>
     <div id="readmeDiv" class="card"></div>
