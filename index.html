@@ -11,6 +11,7 @@
 <link type="text/css" rel="stylesheet" href="team/css/common.css" />
 <script type="text/javascript" src="localsite/js/localsite.js?showheader=true&showsearch=true"></script>
 <script type="text/javascript" src="team/js/common.js"></script>
+<script type="text/javascript" src="team/js/setup.js"></script>
 
 <script>
 // Create OS detection panel using shared function
@@ -38,9 +39,34 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     setTimeout(() => {
         const textInPage = document.getElementById('textInPage');
         if (textInPage) {
+            // Preserve field values before innerHTML replacement
+            const gitAccountField = document.getElementById("gitAccount");
+            const myWebrootForkNameField = document.getElementById("myWebrootForkName");
+            const gitAccountValue = gitAccountField ? gitAccountField.value : '';
+            const myWebrootForkNameValue = myWebrootForkNameField ? myWebrootForkNameField.value : '';
+            
+            // Replace the content
             textInPage.innerHTML = textInPage.innerHTML.replace(/the webroot repo/g, linkString);
+            
+            // Restore field values after replacement
+            const newGitAccountField = document.getElementById("gitAccount");
+            const newMyWebrootForkNameField = document.getElementById("myWebrootForkName");
+            if (newGitAccountField && gitAccountValue) {
+                newGitAccountField.value = gitAccountValue;
+            }
+            if (newMyWebrootForkNameField && myWebrootForkNameValue) {
+                newMyWebrootForkNameField.value = myWebrootForkNameValue;
+            }
+            
+            // Fields will be initialized when setupGitAccountFields is called later
         }
     }, 100);
+    
+    // Setup webroot setup content and Git account fields after content processing
+    setTimeout(() => {
+        setupWebrootSetup('webrootSetup');
+        setupGitAccountFields('textInPage');
+    }, 200);
     
     // Process webroot path and port adjustments in #readmeDiv after README loads
     //setTimeout(() => {
@@ -79,12 +105,24 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
             if (webrootFolder) {
                 const portPattern = new RegExp(`localhost:${currentPort || '8887'}/`, 'g');
                 content = content.replace(portPattern, `localhost:${currentPort || '8887'}/${webrootFolder}/`);
+                
+                // Populate the #myWebrootForkName field if webroot folder is detected and different from "webroot"
+                if (webrootFolder !== "webroot") {
+                    setTimeout(() => {
+                        const webrootForkNameField = document.getElementById("myWebrootForkName");
+                        if (webrootForkNameField && !webrootForkNameField.value) {
+                            webrootForkNameField.value = webrootFolder;
+                            updateGitAccountFields(); // Update storage and links
+                        }
+                    }, 100);
+                }
             }
             
             readmeDiv.innerHTML = content;
         }
     //}, 200);
 });
+
 </script>
 
 </head>
@@ -92,13 +130,7 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
 <body>
 <div class="content contentpadding">
     <div class="card" id="textInPage">
-      <h1>Webroot setup</h1>
-
-      1. Install <a href="https://github.com/apps/desktop" target="github_desktop">Github Desktop</a><br>
-      2. Fork the webroot repo<br>
-      3. Click the Green Button on your fork and choose "Open with Github Desktop" to clone the repo.<br>
-      4. Choose "To contribute to the parent project" as you clone via Github Desktop.<br>
-      5. Start your Command Line Interface (CLI) using the following commands:<br>
+      <div id="webrootSetup"></div>
     </div>
     <div id="commonSetupDiv"></div>
     <div id="readmeDiv" class="card"></div>

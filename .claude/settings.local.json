@@ -6,12 +6,26 @@
       "Bash(find:*)",
       "Bash(rg:*)",
       "Bash(git add:*)",
+      "Bash(git pull:*)",
       "Bash(git push:*)",
       "Bash(git submodule:*)",
       "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git remote:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(echo:*)",
+      "Bash(cd:*)",
       "Bash(ls:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(curl:*)",
+      "Bash(gh:*)",
+      "Bash(./git.sh:*)",
+      "Bash(./git.sh commit)"
     ],
-    "deny": []
+    "deny": [
+      "Read(../**)"
+    ]
   }
 }
