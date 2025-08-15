@@ -20,7 +20,9 @@
       "Bash(ls:*)",
       "Bash(rm:*)",
       "Bash(curl:*)",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(./git.sh:*)",
+      "Bash(./git.sh commit)"
     ],
     "deny": [
       "Read(../**)"

@@ -17,9 +17,9 @@ git submodule update --remote --recursive
 ### Commit submodules:
 When you type "commit submodules", run
 ```bash
-git submodule foreach 'git add . && git commit -m "Deploy updates" && (git push origin main || git push origin master)'
+./git.sh commit submodules [nopr]
 ```
-**Note**: This only pushes to individual submodules. It does NOT update the upstream parent repository with new submodule references. Use individual "commit [submodule name]" or "PR [submodule name]" for complete workflows.
+**Note**: This commits all submodules with changes AND updates the webroot parent repository with new submodule references. Includes automatic PR creation on push failures.
 
 ### PR [submodule name]:
 Create a pull request for a submodule when you lack collaborator privileges:
@@ -37,137 +37,10 @@ cd ..
 When you type "Update", run this comprehensive update workflow that pulls from all parent repos, updates submodules and forks, and prompts for pushes:
 
 ```bash
-update
+./git.sh update
 ```
 
-The above executes this comprehensive update workflow:
-```bash
-# CRITICAL: Navigate to webroot repository root first (never use hardcoded paths)
-cd $(git rev-parse --show-toplevel)
-
-# Verify we're in webroot - if not, user must manually navigate to their webroot directory
-CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null)
-if [[ "$CURRENT_REMOTE" != *"webroot"* ]]; then
-  echo "⚠️ ERROR: Not in webroot repository. Please manually navigate to your webroot directory first."
-  echo "Current repository: $CURRENT_REMOTE"
-  exit 1
-fi
-
-echo "🔄 Starting comprehensive update workflow from webroot..."
-
-# Step 1: Pull any remote changes in current webroot first
-echo "📥 Pulling latest changes from webroot remote..."
-git pull origin main || echo "⚠️ Pull conflicts in webroot - manual resolution needed"
-
-# Step 2: Update webroot from parent ModelEarth/webroot repository (if this is a fork)
-echo "📥 Updating webroot from parent ModelEarth/webroot..."
-WEBROOT_REMOTE=$(git remote get-url origin)
-if [[ "$WEBROOT_REMOTE" =~ "partnertools" ]]; then
-  echo "⚠️ Skipping partnertools webroot - not updating from parent"
-else
-  # Add upstream if it doesn't exist (for forks)
-  if [ -z "$(git remote | grep upstream)" ]; then
-    git remote add upstream https://github.com/ModelEarth/webroot.git
-  fi
-  
-  # Fetch and merge from upstream
-  git fetch upstream
-  git merge upstream/main --no-edit || echo "⚠️ Merge conflicts in webroot - manual resolution needed"
-fi
-
-# Step 2: Update all submodules from their respective ModelEarth parent repos
-echo "📥 Updating submodules from their ModelEarth parents..."
-for submodule in cloud comparison feed home localsite products projects realitystream swiper team; do
-  if [ -d "$submodule" ]; then
-    cd "$submodule"
-    echo "Updating submodule: $submodule"
-    
-    CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null)
-    
-    # Skip partnertools repos
-    if [[ "$CURRENT_REMOTE" =~ "partnertools" ]]; then
-      echo "⚠️ Skipping partnertools submodule: $submodule"
-    else
-      # Add upstream remote for ModelEarth parent if it doesn't exist
-      if [ -z "$(git remote | grep upstream)" ]; then
-        # Determine the correct parent repo URL
-        if [[ "$submodule" == "localsite" ]] || [[ "$submodule" == "home" ]]; then
-          git remote add upstream https://github.com/ModelEarth/$submodule.git
-        else
-          git remote add upstream https://github.com/modelearth/$submodule.git
-        fi
-      fi
-      
-      # Fetch and merge from upstream
-      git fetch upstream 2>/dev/null || git fetch upstream
-      git merge upstream/main --no-edit 2>/dev/null || git merge upstream/master --no-edit 2>/dev/null || git merge upstream/dev --no-edit 2>/dev/null || echo "⚠️ Merge conflicts in $submodule - manual resolution needed"
-    fi
-    cd ..
-  else
-    echo "⚠️ Submodule not found: $submodule"
-  fi
-done
-
-# Step 3: Update webroot submodule references
-echo "🔄 Updating webroot submodule references..."
-git submodule update --remote --recursive
-if [ -n "$(git status --porcelain)" ]; then
-  echo "✅ Submodule references updated in webroot"
-else
-  echo "✅ All submodule references already up to date"
-fi
-
-# Step 4: Update trade repo forks from their ModelEarth parents
-echo "📥 Updating trade repo forks from ModelEarth parents..."
-for repo in exiobase profile useeio.js io; do
-  if [ -d "$repo" ]; then
-    cd "$repo"
-    echo "Updating trade repo: $repo"
-    
-    # First pull any remote changes from origin
-    echo "📥 Pulling latest changes from $repo remote..."
-    git pull origin main || echo "⚠️ Pull conflicts in $repo - manual resolution needed"
-    
-    TRADE_REMOTE=$(git remote get-url origin)
-    # Skip partnertools repos
-    if [[ "$TRADE_REMOTE" =~ "partnertools" ]]; then
-      echo "⚠️ Skipping partnertools trade repo: $repo"
-    else
-      # Add upstream remote for ModelEarth parent if it doesnt exist
-      if [ -z "$(git remote | grep upstream)" ]; then
-        git remote add upstream https://github.com/modelearth/$repo.git
-      fi
-      
-      # Fetch and merge from upstream parent
-      git fetch upstream
-      git merge upstream/main --no-edit || git merge upstream/master --no-edit || git merge upstream/dev --no-edit || echo "⚠️ Merge conflicts in $repo - manual resolution needed"
-    fi
-    cd ..
-  else
-    echo "⚠️ Trade repo not found: $repo"
-  fi
-done
-
-echo "✅ Update workflow completed!"
-echo ""
-echo "📤 PUSH RECOMMENDATIONS:"
-echo "Review the changes and consider pushing your updates:"
-echo ""
-echo "🔹 Webroot: If you have changes in your webroot fork, push to your fork and create PR to ModelEarth/webroot"
-echo "   Commands: git add . && git commit -m \"Merge updates from upstream\" && git push origin main"
-echo "   Then: gh pr create --title \"Update from upstream\" --body \"Merge latest changes from ModelEarth/webroot\""
-echo ""
-echo "🔹 Submodules: If submodules have changes, push to their respective parent repos"
-echo "   Use: commit submodules (to push all) or commit [submodule-name] (for specific ones)"
-echo ""
-echo "🔹 Trade Repos: If trade repos have changes, push to your forks and create PRs to ModelEarth parents"
-echo "   Use: commit forks (to push all trade repos and create PRs)"
-echo ""
-echo "🔹 Complete Push: To push everything at once:"
-echo "   Use: commit (pushes webroot, all submodules, and all forks with PR creation)"
-echo ""
-echo "⚠️ NOTE: None of these operations involve partnertools repositories - they are intentionally excluded"
-```
+All complex git operations are now handled by the git.sh script to avoid shell parsing issues.
 
 **Update Command Features:**
 - **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories
@@ -180,11 +53,19 @@ echo "⚠️ NOTE: None of these operations involve partnertools repositories - 
 - **Comprehensive Workflow**: Handles webroot, all submodules, and all trade repositories in one command
 
 **Post-Update Recommendations:**
-After running "Update", review changes and use these commands as needed:
-- `commit` - Push all changes (webroot + submodules + forks) with PR creation
-- `commit submodules` - Push only submodule changes  
-- `commit forks` - Push only trade repo fork changes with PRs
-- `commit [specific-name]` - Push changes for a specific repository
+After running "./git.sh update", review changes and use these commands as needed:
+- `./git.sh commit` - Push all changes (webroot + submodules + forks) with PR creation
+- `./git.sh commit submodules` - Push only submodule changes  
+- `./git.sh commit [specific-name]` - Push changes for a specific repository
+
+**Git.sh Usage:**
+```bash
+./git.sh update                    # Full update workflow  
+./git.sh commit                    # Complete commit: webroot, all submodules, and trade repos
+./git.sh commit [name]             # Commit specific submodule
+./git.sh commit submodules         # Commit all submodules only
+./git.sh commit [name] nopr        # Skip PR creation on push failures
+```
 
 
 ## Submodule Management
@@ -230,68 +111,17 @@ git remote -v
 **Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Navigate back to your webroot directory using your system's actual webroot path before running any commands.
 
 ### IMPORTANT: "commit [name]" Command Requirements
-When a user says "commit [name]", use this intelligent fallback strategy with automatic PR creation:
+When a user says "commit [name]", use the git.sh script:
 
-**Strategy: Try submodule → Try repo → Fallback to webroot (with PR fallback)**
 ```bash
-# Step 0: ALWAYS navigate to webroot first and detect no-PR flag
-cd $(git rev-parse --show-toplevel)
-SKIP_PR=false
-if [[ "$*" =~ (nopr|no\ pr)$ ]] || [[ "$*" =~ (NOPR|NO\ PR)$ ]]; then
-  SKIP_PR=true
-fi
-
-# Step 1: Try to commit as submodule first
-if git submodule foreach --recursive 'if [ "$name" = "[name]" ]; then git add . && git commit -m "Update [name]" && (git push origin HEAD:main || echo "PUSH_FAILED"); fi' | grep -q "Update [name]"; then
-  # Check if push failed and create PR if needed
-  if git submodule foreach --recursive 'if [ "$name" = "[name]" ] && [ "$SKIP_PR" != "true" ]; then git log --oneline -1 | grep -q "Update [name]" && git push origin HEAD:main 2>/dev/null || (git push origin HEAD:feature-[name]-updates 2>/dev/null && gh pr create --title "Update [name] submodule" --body "Automated update from webroot integration" --base main --head feature-[name]-updates || echo "PR creation failed"); fi'; then
-    echo "🔄 Created PR for [name] submodule due to permission restrictions"
-  fi
-  
-  # Update parent repository
-  git submodule update --remote [name]
-  if git add [name] && git commit -m "Update [name] submodule"; then
-    if git push; then
-      echo "✅ Successfully committed [name] submodule"
-    elif [ "$SKIP_PR" != "true" ]; then
-      git push origin HEAD:feature-webroot-[name]-update && gh pr create --title "Update [name] submodule reference" --body "Update submodule reference for [name]" --base main --head feature-webroot-[name]-update || echo "Webroot PR creation failed"
-      echo "🔄 Created PR for webroot [name] submodule reference"
-    fi
-  fi
-  
-# Step 2: If not a submodule, try as standalone repository
-elif [ -d "[name]" ] && [ -d "[name]/.git" ]; then
-  cd [name]
-  if [ -n "$(git status --porcelain)" ]; then
-    git add .
-    git commit -m "Update [name] repository"
-    if git push origin main; then
-      echo "✅ Successfully committed [name] repository"
-    elif [ "$SKIP_PR" != "true" ]; then
-      git push origin HEAD:feature-[name]-updates && gh pr create --title "Update [name]" --body "Automated update from webroot integration" --base main --head feature-[name]-updates || echo "PR creation failed"
-      echo "🔄 Created PR for [name] repository due to permission restrictions"
-    fi
-  else
-    echo "No changes to commit in [name] repository"
-  fi
-  cd $(git rev-parse --show-toplevel)
-  
-# Step 3: Fallback to webroot repository
-else
-  if [ -n "$(git status --porcelain)" ]; then
-    git add .
-    git commit -m "Update webroot repository"
-    if git push; then
-      echo "✅ Successfully committed webroot repository (fallback)"
-    elif [ "$SKIP_PR" != "true" ]; then
-      git push origin HEAD:feature-webroot-updates && gh pr create --title "Update webroot" --body "Automated webroot update" --base main --head feature-webroot-updates || echo "PR creation failed"
-      echo "🔄 Created PR for webroot repository due to permission restrictions"
-    fi
-  else
-    echo "No changes to commit in webroot repository"
-  fi
-fi
+./git.sh commit [name] [nopr]
 ```
+
+The git.sh script handles all the complex logic including:
+- Submodule detection and committing
+- Automatic PR creation on push failures  
+- Webroot submodule reference updates
+- Support for 'nopr' flag to skip PR creation
 
 **Direct Commit Method (if foreach strategy fails):**
 
