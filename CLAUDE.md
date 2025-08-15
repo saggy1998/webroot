@@ -47,7 +47,7 @@ cd $(git rev-parse --show-toplevel)
 
 # Verify we're in webroot - if not, user must manually navigate to their webroot directory
 CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null)
-if [[ ! "$CURRENT_REMOTE" =~ "webroot" ]]; then
+if [[ "$CURRENT_REMOTE" != *"webroot"* ]]; then
   echo "⚠️ ERROR: Not in webroot repository. Please manually navigate to your webroot directory first."
   echo "Current repository: $CURRENT_REMOTE"
   exit 1
@@ -66,7 +66,7 @@ if [[ "$WEBROOT_REMOTE" =~ "partnertools" ]]; then
   echo "⚠️ Skipping partnertools webroot - not updating from parent"
 else
   # Add upstream if it doesn't exist (for forks)
-  if ! git remote | grep -q upstream; then
+  if [ -z "$(git remote | grep upstream)" ]; then
     git remote add upstream https://github.com/ModelEarth/webroot.git
   fi
   
@@ -89,7 +89,7 @@ for submodule in cloud comparison feed home localsite products projects realitys
       echo "⚠️ Skipping partnertools submodule: $submodule"
     else
       # Add upstream remote for ModelEarth parent if it doesn't exist
-      if ! git remote | grep -q upstream; then
+      if [ -z "$(git remote | grep upstream)" ]; then
         # Determine the correct parent repo URL
         if [[ "$submodule" == "localsite" ]] || [[ "$submodule" == "home" ]]; then
           git remote add upstream https://github.com/ModelEarth/$submodule.git
@@ -100,7 +100,7 @@ for submodule in cloud comparison feed home localsite products projects realitys
       
       # Fetch and merge from upstream
       git fetch upstream 2>/dev/null || git fetch upstream
-      git merge upstream/main --no-edit 2>/dev/null || git merge upstream/master --no-edit 2>/dev/null || echo "⚠️ Merge conflicts in $submodule - manual resolution needed"
+      git merge upstream/main --no-edit 2>/dev/null || git merge upstream/master --no-edit 2>/dev/null || git merge upstream/dev --no-edit 2>/dev/null || echo "⚠️ Merge conflicts in $submodule - manual resolution needed"
     fi
     cd ..
   else
@@ -134,13 +134,13 @@ for repo in exiobase profile useeio.js io; do
       echo "⚠️ Skipping partnertools trade repo: $repo"
     else
       # Add upstream remote for ModelEarth parent if it doesnt exist
-      if ! git remote | grep -q upstream; then
+      if [ -z "$(git remote | grep upstream)" ]; then
         git remote add upstream https://github.com/modelearth/$repo.git
       fi
       
       # Fetch and merge from upstream parent
       git fetch upstream
-      git merge upstream/main --no-edit || echo "⚠️ Merge conflicts in $repo - manual resolution needed"
+      git merge upstream/main --no-edit || git merge upstream/master --no-edit || git merge upstream/dev --no-edit || echo "⚠️ Merge conflicts in $repo - manual resolution needed"
     fi
     cd ..
   else
@@ -524,7 +524,7 @@ for repo in exiobase profile useeio.js io; do
       if [ "$SKIP_PR" != "true" ]; then
         # Check if this is a fork by comparing remote URL with expected parent
         REMOTE_URL=$(git remote get-url origin)
-        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && ! [[ "$REMOTE_URL" =~ "ModelEarth/$repo" ]]; then
+        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && [[ "$REMOTE_URL" != *"ModelEarth/$repo"* ]]; then
           gh pr create --title "Update $repo" --body "Automated update from webroot integration" --base main --head main || echo "PR creation failed for $repo"
           echo "🔄 Created PR for $repo fork to parent repository"
         else
@@ -619,7 +619,7 @@ for repo in exiobase profile useeio.js io; do
       if [ "$SKIP_PR" != "true" ]; then
         # Check if this is a fork by comparing remote URL with expected parent
         REMOTE_URL=$(git remote get-url origin)
-        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && ! [[ "$REMOTE_URL" =~ "ModelEarth/$repo" ]]; then
+        if [[ "$REMOTE_URL" =~ "modelearth/$repo" ]] && [[ "$REMOTE_URL" != *"ModelEarth/$repo"* ]]; then
           gh pr create --title "Update $repo" --body "Automated update from comprehensive webroot commit" --base main --head main || echo "PR creation failed for $repo"
           echo "🔄 Created PR for $repo fork to parent repository"
         else
