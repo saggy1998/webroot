@@ -20,7 +20,7 @@ Look at the code in your webroot with an editor like [Sublime Text](https://www.
 
 ## Get Trade Flow Repos
 
-To contribute to our trade flow visualizations for **Data Science**, run the following to fork and clone:  
+To contribute to our trade flow visualizations, run the following to fork and clone:  
 [exiobase](https://github.com/ModelEarth/exiobase/tree/main/tradeflow), profile, useeio.js and io
 
 	fork trade repos to [your github account]
