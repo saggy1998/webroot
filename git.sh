@@ -30,11 +30,21 @@ add_upstream() {
 
 # Merge from upstream with fallback branches
 merge_upstream() {
+    local repo_name="$1"
     git fetch upstream 2>/dev/null || git fetch upstream
-    git merge upstream/main --no-edit 2>/dev/null || \
-    git merge upstream/master --no-edit 2>/dev/null || \
-    git merge upstream/dev --no-edit 2>/dev/null || \
-    echo "⚠️ Merge conflicts - manual resolution needed"
+    
+    # Try main/master first for all repos
+    if git merge upstream/main --no-edit 2>/dev/null; then
+        return 0
+    elif git merge upstream/master --no-edit 2>/dev/null; then
+        return 0
+    # Only try dev branch for useeio.js
+    elif [[ "$repo_name" == "useeio.js" ]] && git merge upstream/dev --no-edit 2>/dev/null; then
+        return 0
+    else
+        echo "⚠️ Merge conflicts - manual resolution needed"
+        return 1
+    fi
 }
 
 # Commit and push with PR fallback
@@ -70,7 +80,7 @@ update_command() {
     WEBROOT_REMOTE=$(git remote get-url origin)
     if [[ "$WEBROOT_REMOTE" != *"partnertools"* ]]; then
         add_upstream "webroot" "true"
-        merge_upstream
+        merge_upstream "webroot"
     fi
     
     # Update submodules
@@ -86,7 +96,7 @@ update_command() {
             else
                 add_upstream "$sub" "false" 
             fi
-            merge_upstream
+            merge_upstream "$sub"
         fi
         cd ..
     done
@@ -105,7 +115,7 @@ update_command() {
         REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
         if [[ "$REMOTE" != *"partnertools"* ]]; then
             add_upstream "$repo" "false"
-            merge_upstream
+            merge_upstream "$repo"
         fi
         cd ..
     done
