@@ -56,12 +56,24 @@ commit_push() {
         git add .
         git commit -m "Update $name"
         
-        if git push origin HEAD:main 2>/dev/null; then
-            echo "✅ Successfully pushed $name"
-        elif [[ "$skip_pr" != "nopr" ]]; then
-            git push origin HEAD:feature-$name-updates 2>/dev/null && \
-            gh pr create --title "Update $name" --body "Automated update" --base main --head feature-$name-updates 2>/dev/null || \
-            echo "🔄 PR creation failed for $name"
+        # Special case: push useeio.js to dev branch
+        if [[ "$name" == "useeio.js" ]]; then
+            if git push origin HEAD:dev 2>/dev/null; then
+                echo "✅ Successfully pushed $name to dev branch"
+            elif [[ "$skip_pr" != "nopr" ]]; then
+                git push origin HEAD:feature-$name-updates 2>/dev/null && \
+                gh pr create --title "Update $name" --body "Automated update" --base dev --head feature-$name-updates 2>/dev/null || \
+                echo "🔄 PR creation failed for $name"
+            fi
+        else
+            # Standard behavior: push to main branch
+            if git push origin HEAD:main 2>/dev/null; then
+                echo "✅ Successfully pushed $name"
+            elif [[ "$skip_pr" != "nopr" ]]; then
+                git push origin HEAD:feature-$name-updates 2>/dev/null && \
+                gh pr create --title "Update $name" --body "Automated update" --base main --head feature-$name-updates 2>/dev/null || \
+                echo "🔄 PR creation failed for $name"
+            fi
         fi
     fi
 }
