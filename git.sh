@@ -131,10 +131,47 @@ update_webroot_submodule_reference() {
     fi
 }
 
+# Fix detached HEAD state by merging into main branch
+fix_detached_head() {
+    local name="$1"
+    
+    # Check if we're in detached HEAD state
+    local current_branch=$(git symbolic-ref -q HEAD 2>/dev/null || echo "")
+    if [ -z "$current_branch" ]; then
+        echo "⚠️ $name is in detached HEAD state - fixing..."
+        
+        # Get the current commit hash
+        local detached_commit=$(git rev-parse HEAD)
+        
+        # Switch to main branch
+        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+            echo "⚠️ No main/master branch found in $name"
+            return 1
+        }
+        
+        # Check if we need to merge the detached commit
+        if ! git merge-base --is-ancestor "$detached_commit" HEAD; then
+            echo "🔄 Merging detached commit $detached_commit into main branch"
+            if git merge "$detached_commit" --no-edit 2>/dev/null; then
+                echo "✅ Successfully merged detached HEAD in $name"
+            else
+                echo "⚠️ Merge conflicts in $name - manual resolution needed"
+                return 1
+            fi
+        else
+            echo "✅ Detached commit already in $name main branch"
+        fi
+    fi
+    return 0
+}
+
 # Enhanced commit and push with automatic fork creation
 commit_push() {
     local name="$1"
     local skip_pr="$2"
+    
+    # Fix detached HEAD before committing
+    fix_detached_head "$name"
     
     if [ -n "$(git status --porcelain)" ]; then
         git add .
@@ -242,6 +279,10 @@ update_command() {
     echo "🔄 Updating submodule references..."
     git submodule update --remote --recursive
     
+    # Check for and fix any detached HEAD states after updates
+    echo "🔍 Checking for detached HEAD states after update..."
+    fix_all_detached_heads
+    
     # Update trade repos
     echo "📥 Updating trade repos..."
     for repo in exiobase profile useeio.js io; do
@@ -258,6 +299,54 @@ update_command() {
     done
     
     echo "✅ Update completed! Use: ./git.sh commit"
+}
+
+# Check and fix detached HEAD states in all repositories
+fix_all_detached_heads() {
+    echo "🔍 Checking for detached HEAD states in all repositories..."
+    cd $(git rev-parse --show-toplevel)
+    check_webroot
+    
+    local fixed_count=0
+    
+    # Check webroot
+    echo "📁 Checking webroot..."
+    if fix_detached_head "webroot"; then
+        ((fixed_count++))
+    fi
+    
+    # Check all submodules
+    echo "📁 Checking submodules..."
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+        if [ -d "$sub" ]; then
+            echo "📁 Checking $sub..."
+            cd "$sub"
+            if fix_detached_head "$sub"; then
+                ((fixed_count++))
+            fi
+            cd ..
+        fi
+    done
+    
+    # Check trade repos
+    echo "📁 Checking trade repos..."
+    for repo in exiobase profile useeio.js io; do
+        if [ -d "$repo" ]; then
+            echo "📁 Checking $repo..."
+            cd "$repo"
+            if fix_detached_head "$repo"; then
+                ((fixed_count++))
+            fi
+            cd ..
+        fi
+    done
+    
+    if [ $fixed_count -gt 0 ]; then
+        echo "✅ Fixed detached HEAD states in $fixed_count repositories"
+        echo "💡 You may want to run './git.sh commit' to update submodule references"
+    else
+        echo "✅ No detached HEAD states found"
+    fi
 }
 
 # Create PR for webroot to its parent
@@ -416,14 +505,18 @@ case "$1" in
             commit_all "$2"
         fi
         ;;
+    "fix-heads"|"fix")
+        fix_all_detached_heads
+        ;;
     *)
-        echo "Usage: ./git.sh [update|commit] [submodule_name|submodules] [nopr]"
+        echo "Usage: ./git.sh [update|commit|fix] [submodule_name|submodules] [nopr]"
         echo ""
         echo "Commands:"
         echo "  ./git.sh update                    - Run comprehensive update workflow"
         echo "  ./git.sh commit                    - Commit webroot, all submodules, and trade repos"
         echo "  ./git.sh commit [name]             - Commit specific submodule"
         echo "  ./git.sh commit submodules         - Commit all submodules only"
+        echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
         echo ""
         echo "Options:"
         echo "  nopr                               - Skip PR creation on push failures"
