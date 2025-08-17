@@ -206,6 +206,50 @@ fix_detached_head() {
     return 0
 }
 
+# Ensure all pending commits are pushed to origin
+ensure_push_completion() {
+    local name="$1"
+    local max_retries=3
+    local retry_count=0
+    
+    while [ $retry_count -lt $max_retries ]; do
+        # Check if there are unpushed commits
+        local unpushed=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+        if [ "$unpushed" = "0" ]; then
+            echo "✅ All commits pushed for $name"
+            return 0
+        fi
+        
+        echo "📤 Pushing $unpushed pending commits for $name..."
+        
+        # Try different push strategies
+        if git push 2>/dev/null; then
+            echo "✅ Successfully pushed $name"
+            return 0
+        elif git push origin HEAD:main 2>/dev/null; then
+            echo "✅ Successfully pushed $name to main"
+            return 0
+        elif git push origin HEAD:master 2>/dev/null; then
+            echo "✅ Successfully pushed $name to master"
+            return 0
+        elif git push --force-with-lease 2>/dev/null; then
+            echo "✅ Force pushed $name with lease"
+            return 0
+        else
+            ((retry_count++))
+            echo "⚠️ Push attempt $retry_count failed for $name"
+            if [ $retry_count -lt $max_retries ]; then
+                echo "🔄 Retrying in 2 seconds..."
+                sleep 2
+            fi
+        fi
+    done
+    
+    echo "❌ Failed to push $name after $max_retries attempts"
+    echo "💡 You may need to manually resolve this in GitHub Desktop"
+    return 1
+}
+
 # Enhanced commit and push with automatic fork creation
 commit_push() {
     local name="$1"
@@ -231,6 +275,8 @@ commit_push() {
         # Try to push directly first
         if git push origin HEAD:$target_branch 2>/dev/null; then
             echo "✅ Successfully pushed $name to $target_branch branch"
+            # Ensure all pending commits are pushed
+            ensure_push_completion "$name"
             return 0
         fi
         
@@ -248,32 +294,42 @@ commit_push() {
                 # Try pushing to fork
                 if git push origin HEAD:$target_branch 2>/dev/null; then
                     echo "✅ Successfully pushed $name to your fork"
-                    
-                    # Create PR if not skipped
-                    if [[ "$skip_pr" != "nopr" ]]; then
-                        echo "📝 Creating pull request..."
-                        local pr_url=$(gh pr create \
-                            --title "Update $name" \
-                            --body "Automated update from git.sh commit workflow" \
-                            --base $target_branch \
-                            --head $target_branch \
-                            --repo "$parent_account/$name" 2>/dev/null || echo "")
-                        
-                        if [ -n "$pr_url" ]; then
-                            echo "🔄 Created PR: $pr_url"
-                        else
-                            echo "⚠️ PR creation failed for $name"
-                        fi
-                    fi
-                    
-                    # Update webroot submodule reference if this is a submodule
-                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
-                        update_webroot_submodule_reference "$name" "$commit_hash"
-                    fi
-                    
+                    ensure_push_completion "$name"
                 else
-                    echo "⚠️ Failed to push to fork"
+                    # Force push if normal push fails
+                    echo "🔄 Normal push failed, trying force push..."
+                    if git push --force-with-lease origin HEAD:$target_branch 2>/dev/null; then
+                        echo "✅ Force pushed $name to your fork"
+                        ensure_push_completion "$name"
+                    else
+                        echo "⚠️ Failed to push $name to fork"
+                        return 1
+                    fi
                 fi
+                
+                # Create PR if not skipped
+                if [[ "$skip_pr" != "nopr" ]]; then
+                    echo "📝 Creating pull request..."
+                    local pr_url=$(gh pr create \
+                        --title "Update $name" \
+                        --body "Automated update from git.sh commit workflow" \
+                        --base $target_branch \
+                        --head $target_branch \
+                        --repo "$parent_account/$name" 2>/dev/null || echo "")
+                    
+                    if [ -n "$pr_url" ]; then
+                        echo "🔄 Created PR: $pr_url"
+                    else
+                        echo "⚠️ PR creation failed for $name"
+                    fi
+                fi
+                
+                # Update webroot submodule reference if this is a submodule
+                if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
+                    update_webroot_submodule_reference "$name" "$commit_hash"
+                fi
+            else
+                echo "⚠️ Failed to push to fork"
             fi
         elif [[ "$skip_pr" != "nopr" ]]; then
             # Other push failure - try feature branch PR
@@ -531,6 +587,10 @@ commit_submodule() {
         if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
             create_webroot_pr "$skip_pr"
         fi
+        
+        # Final push completion check
+        echo "🔍 Checking for remaining unpushed commits..."
+        final_push_completion_check
     else
         echo "⚠️ Repository not found: $name"
     fi
@@ -559,6 +619,10 @@ commit_submodules() {
         git push 2>/dev/null || echo "🔄 Webroot push failed"
         echo "✅ Updated submodule references"
     fi
+    
+    # Final push completion check
+    echo "🔍 Checking for remaining unpushed commits..."
+    final_push_completion_check
 }
 
 # Complete commit workflow
@@ -588,7 +652,46 @@ commit_all() {
         cd ..
     done
     
+    # Final push completion check for all repositories
+    echo "🔍 Checking for any remaining unpushed commits..."
+    final_push_completion_check
+    
     echo "✅ Complete commit finished!"
+}
+
+# Check all repositories for unpushed commits and push them
+final_push_completion_check() {
+    cd $(git rev-parse --show-toplevel)
+    
+    # Check webroot
+    if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
+        echo "📤 Found unpushed commits in webroot..."
+        ensure_push_completion "webroot"
+    fi
+    
+    # Check all submodules
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+        if [ -d "$sub" ]; then
+            cd "$sub"
+            if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
+                echo "📤 Found unpushed commits in $sub..."
+                ensure_push_completion "$sub"
+            fi
+            cd ..
+        fi
+    done
+    
+    # Check trade repos
+    for repo in exiobase profile useeio.js io; do
+        if [ -d "$repo" ]; then
+            cd "$repo"
+            if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
+                echo "📤 Found unpushed commits in $repo..."
+                ensure_push_completion "$repo"
+            fi
+            cd ..
+        fi
+    done
 }
 
 # Main command dispatcher
