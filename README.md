@@ -18,17 +18,7 @@ Then view pages at:
 
 Look at the code in your webroot with an editor like [Sublime Text](https://www.sublimetext.com/) ($99), [VS Code](https://code.visualstudio.com/) or [WebStorm](https://www.jetbrains.com/webstorm/).
 
-## Get Trade Flow Repos
-
-To contribute to our trade flow visualizations, run the following to fork and clone:  
-[exiobase](https://github.com/ModelEarth/exiobase/tree/main/tradeflow), profile, useeio.js and io
-
-	fork trade repos to [your github account]
-	clone trade repos from [your github account]
-
-The above requires having GitHub CLI (gh) installed locally and authenticated with your GitHub account.
-
-[Overview of repos (codechat)](https://model.earth/codechat/)
+<div id="tradeFlowRepos"></div>
 
 ## How to deploy changes
 
