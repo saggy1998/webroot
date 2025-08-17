@@ -78,6 +78,30 @@ get_current_user() {
     return 0
 }
 
+# Clear git credentials and setup fresh authentication for current GitHub user
+refresh_git_credentials() {
+    local current_user="$1"
+    
+    echo "🔄 Refreshing git credentials for $current_user..."
+    
+    # Clear cached git credentials
+    git credential-manager-core erase 2>/dev/null || true
+    git credential erase 2>/dev/null || true
+    
+    # Clear macOS keychain git credentials
+    if command -v security >/dev/null 2>&1; then
+        security delete-internet-password -s github.com 2>/dev/null || true
+    fi
+    
+    # Setup git to use GitHub CLI credentials
+    gh auth setup-git
+    
+    echo "✅ Git credentials refreshed for $current_user"
+}
+
+# Store last known user in a temporary file for comparison
+USER_CACHE_FILE="/tmp/git_sh_last_user"
+
 # Check if current user has changed and update remotes accordingly
 check_user_change() {
     local name="$1"
@@ -86,6 +110,21 @@ check_user_change() {
     if [ $? -ne 0 ] || [ -z "$current_user" ]; then
         return 1
     fi
+    
+    # Check if user has changed since last run
+    local last_user=""
+    if [ -f "$USER_CACHE_FILE" ]; then
+        last_user=$(cat "$USER_CACHE_FILE" 2>/dev/null)
+    fi
+    
+    # If user has changed, refresh git credentials
+    if [ -n "$last_user" ] && [ "$last_user" != "$current_user" ]; then
+        echo "👤 GitHub user changed from $last_user to $current_user"
+        refresh_git_credentials "$current_user"
+    fi
+    
+    # Store current user for next comparison
+    echo "$current_user" > "$USER_CACHE_FILE"
     
     # Check current origin remote
     local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
@@ -714,8 +753,15 @@ case "$1" in
     "update-remotes"|"remotes")
         update_all_remotes_for_user
         ;;
+    "refresh-auth"|"auth")
+        current_user=$(get_current_user)
+        if [ $? -eq 0 ]; then
+            refresh_git_credentials "$current_user"
+            update_all_remotes_for_user
+        fi
+        ;;
     *)
-        echo "Usage: ./git.sh [update|commit|fix|remotes] [submodule_name|submodules] [nopr]"
+        echo "Usage: ./git.sh [update|commit|fix|remotes|auth] [submodule_name|submodules] [nopr]"
         echo ""
         echo "Commands:"
         echo "  ./git.sh update                    - Run comprehensive update workflow"
@@ -724,6 +770,7 @@ case "$1" in
         echo "  ./git.sh commit submodules         - Commit all submodules only"
         echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
         echo "  ./git.sh remotes                   - Update all remotes to current GitHub user"
+        echo "  ./git.sh auth                      - Refresh git credentials for current GitHub user"
         echo ""
         echo "Options:"
         echo "  nopr                               - Skip PR creation on push failures"

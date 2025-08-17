@@ -53,14 +53,22 @@ The git.sh script automatically detects the current GitHub CLI user and adapts a
 ```bash
 gh auth logout                    # Log out of current GitHub account
 gh auth login                     # Log into different GitHub account
-./git.sh remotes                  # Update all remotes to current user
+./git.sh auth                     # Refresh git credentials and update all remotes
 ```
 
 When you switch GitHub accounts, the script will:
-- Automatically detect the new user during commit/update operations
-- Update remote URLs to point to the new user's forks
-- Create PRs from the new user's account
-- Fork repositories to the new user's account when needed
+- **Automatically detect** the new user during commit/update operations
+- **Clear cached git credentials** from previous account
+- **Refresh authentication** to use new GitHub CLI credentials  
+- **Update remote URLs** to point to the new user's forks
+- **Create PRs** from the new user's account
+- **Fork repositories** to the new user's account when needed
+
+**Automatic Credential Management:**
+- Detects when GitHub user has changed since last run
+- Clears cached credentials from credential manager and macOS keychain
+- Runs `gh auth setup-git` to sync git with GitHub CLI
+- Prevents permission denied errors from stale credentials
 
 **Update Command Features:**
 - **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories
