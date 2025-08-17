@@ -71,11 +71,43 @@ get_parent_account() {
 get_current_user() {
     local user=$(gh api user --jq .login 2>/dev/null || echo "")
     if [ -z "$user" ]; then
-        echo "⚠️ Not logged into GitHub CLI - please run 'gh auth login'"
+        # Don't echo error message, just return failure
         return 1
     fi
     echo "$user"
     return 0
+}
+
+# Check if current user owns the repository or has write access
+is_repo_owner() {
+    local repo_name="$1"
+    local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
+    
+    # Extract username from origin URL
+    if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$repo_name ]]; then
+        local repo_owner="${BASH_REMATCH[1]}"
+        
+        # Try to get GitHub CLI user first
+        local gh_user=$(get_current_user)
+        if [ $? -eq 0 ] && [ "$gh_user" = "$repo_owner" ]; then
+            return 0  # User owns the repo via GitHub CLI
+        fi
+        
+        # If GitHub CLI fails, check if it's a personal fork (not ModelEarth/modelearth)
+        if [[ "$repo_owner" != "ModelEarth" ]] && [[ "$repo_owner" != "modelearth" ]]; then
+            return 0  # Likely a fork owned by the user
+        fi
+        
+        # Special case: if pointing to ModelEarth/webroot, test if user has push access
+        if [[ "$repo_owner" == "ModelEarth" ]] && [[ "$repo_name" == "webroot" ]]; then
+            # Try a simple push test (dry run)
+            if git push --dry-run origin HEAD >/dev/null 2>&1; then
+                return 0  # User has push access to ModelEarth/webroot
+            fi
+        fi
+    fi
+    
+    return 1  # Not the owner or couldn't determine
 }
 
 # Clear git credentials and setup fresh authentication for current GitHub user
@@ -105,9 +137,22 @@ USER_CACHE_FILE="/tmp/git_sh_last_user"
 # Check if current user has changed and update remotes accordingly
 check_user_change() {
     local name="$1"
-    local current_user=$(get_current_user)
     
+    # If user owns the repo, skip GitHub CLI requirement
+    if is_repo_owner "$name"; then
+        return 0  # User owns the repo, no need to update remotes
+    fi
+    
+    # Try to get current user via GitHub CLI
+    local current_user=$(get_current_user)
     if [ $? -ne 0 ] || [ -z "$current_user" ]; then
+        # GitHub CLI not authenticated, but check if we can proceed without it
+        local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
+        if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$name ]] && [[ "${BASH_REMATCH[1]}" != "ModelEarth" ]] && [[ "${BASH_REMATCH[1]}" != "modelearth" ]]; then
+            echo "ℹ️ GitHub CLI not authenticated, but using existing fork remote"
+            return 0
+        fi
+        echo "⚠️ GitHub CLI not authenticated and not using a personal fork"
         return 1
     fi
     
@@ -147,8 +192,15 @@ setup_fork() {
     local name="$1"
     local parent_account="$2"
     
+    # If user already owns the repo, no need to fork
+    if is_repo_owner "$name"; then
+        echo "ℹ️ Already using user's repository, no fork needed"
+        return 0
+    fi
+    
     local current_user=$(get_current_user)
     if [ $? -ne 0 ]; then
+        echo "⚠️ Cannot create fork - GitHub CLI not authenticated"
         return 1
     fi
     
