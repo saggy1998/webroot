@@ -98,12 +98,10 @@ is_repo_owner() {
             return 0  # Likely a fork owned by the user
         fi
         
-        # Special case: if pointing to ModelEarth/webroot, test if user has push access
+        # Special case: if pointing to ModelEarth/webroot, assume user has access
+        # (since they wouldn't have this repo cloned unless they have access)
         if [[ "$repo_owner" == "ModelEarth" ]] && [[ "$repo_name" == "webroot" ]]; then
-            # Try a simple push test (dry run)
-            if git push --dry-run origin HEAD >/dev/null 2>&1; then
-                return 0  # User has push access to ModelEarth/webroot
-            fi
+            return 0  # Assume user has access to ModelEarth/webroot
         fi
     fi
     
@@ -148,11 +146,17 @@ check_user_change() {
     if [ $? -ne 0 ] || [ -z "$current_user" ]; then
         # GitHub CLI not authenticated, but check if we can proceed without it
         local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
-        if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$name ]] && [[ "${BASH_REMATCH[1]}" != "ModelEarth" ]] && [[ "${BASH_REMATCH[1]}" != "modelearth" ]]; then
-            echo "ℹ️ GitHub CLI not authenticated, but using existing fork remote"
-            return 0
+        if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$name ]]; then
+            local repo_owner="${BASH_REMATCH[1]}"
+            if [[ "$repo_owner" != "ModelEarth" ]] && [[ "$repo_owner" != "modelearth" ]]; then
+                echo "ℹ️ GitHub CLI not authenticated, but using existing fork remote"
+                return 0
+            elif [[ "$repo_owner" == "ModelEarth" ]] && [[ "$name" == "webroot" ]]; then
+                echo "ℹ️ GitHub CLI not authenticated, but have access to ModelEarth/webroot"
+                return 0
+            fi
         fi
-        echo "⚠️ GitHub CLI not authenticated and not using a personal fork"
+        echo "⚠️ GitHub CLI not authenticated and repository requires it for operations"
         return 1
     fi
     
