@@ -260,6 +260,47 @@ update_command() {
     echo "✅ Update completed! Use: ./git.sh commit"
 }
 
+# Create PR for webroot to its parent
+create_webroot_pr() {
+    local skip_pr="$1"
+    
+    if [[ "$skip_pr" == "nopr" ]]; then
+        return 0
+    fi
+    
+    # Get webroot remote URLs
+    local origin_url=$(git remote get-url origin 2>/dev/null || echo "")
+    local upstream_url=$(git remote get-url upstream 2>/dev/null || echo "")
+    
+    # Extract parent account from upstream or determine from origin
+    local parent_account=""
+    if [[ "$upstream_url" == *"ModelEarth/webroot"* ]]; then
+        parent_account="ModelEarth"
+    elif [[ "$upstream_url" == *"partnertools/webroot"* ]]; then
+        parent_account="partnertools"
+    elif [[ "$origin_url" != *"ModelEarth/webroot"* ]] && [[ "$origin_url" != *"partnertools/webroot"* ]]; then
+        # This is likely a fork, default to ModelEarth as parent
+        parent_account="ModelEarth"
+    else
+        # Already pointing to parent, no PR needed
+        return 0
+    fi
+    
+    echo "📝 Creating webroot PR to $parent_account/webroot..."
+    local pr_url=$(gh pr create \
+        --title "Update webroot with submodule changes" \
+        --body "Automated webroot update from git.sh commit workflow - includes submodule reference updates and configuration changes" \
+        --base main \
+        --head main \
+        --repo "$parent_account/webroot" 2>/dev/null || echo "")
+    
+    if [ -n "$pr_url" ]; then
+        echo "🔄 Created webroot PR: $pr_url"
+    else
+        echo "⚠️ Webroot PR creation failed or not needed"
+    fi
+}
+
 # Commit specific submodule
 commit_submodule() {
     local name="$1"
@@ -278,8 +319,20 @@ commit_submodule() {
         if [ -n "$(git status --porcelain | grep $name)" ]; then
             git add "$name"
             git commit -m "Update $name submodule reference"
-            git push 2>/dev/null || echo "🔄 Webroot push failed for $name"
-            echo "✅ Updated $name submodule reference"
+            
+            # Try to push webroot changes
+            if git push 2>/dev/null; then
+                echo "✅ Updated $name submodule reference"
+            else
+                echo "🔄 Webroot push failed for $name - attempting PR workflow"
+                create_webroot_pr "$skip_pr"
+            fi
+        fi
+        
+        # Check if we need to create a webroot PR (for when webroot push succeeded but we want PR anyway)
+        local webroot_commits_ahead=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+        if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
+            create_webroot_pr "$skip_pr"
         fi
     else
         echo "⚠️ Repository not found: $name"
@@ -320,6 +373,12 @@ commit_all() {
     
     # Commit webroot changes
     commit_push "webroot" "$skip_pr"
+    
+    # Check if webroot needs PR after direct changes
+    local webroot_commits_ahead=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+    if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
+        create_webroot_pr "$skip_pr"
+    fi
     
     # Commit all submodules
     commit_submodules "$skip_pr"
