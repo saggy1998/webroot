@@ -47,6 +47,21 @@ When you type "Update", run this comprehensive update workflow that pulls from a
 
 All complex git operations are now handled by the git.sh script to avoid shell parsing issues.
 
+### GitHub Account Management
+The git.sh script automatically detects the current GitHub CLI user and adapts accordingly:
+
+```bash
+gh auth logout                    # Log out of current GitHub account
+gh auth login                     # Log into different GitHub account
+./git.sh remotes                  # Update all remotes to current user
+```
+
+When you switch GitHub accounts, the script will:
+- Automatically detect the new user during commit/update operations
+- Update remote URLs to point to the new user's forks
+- Create PRs from the new user's account
+- Fork repositories to the new user's account when needed
+
 **Update Command Features:**
 - **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories
 - **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks

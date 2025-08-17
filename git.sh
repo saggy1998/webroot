@@ -67,12 +67,53 @@ get_parent_account() {
     fi
 }
 
+# Get current GitHub user account
+get_current_user() {
+    local user=$(gh api user --jq .login 2>/dev/null || echo "")
+    if [ -z "$user" ]; then
+        echo "⚠️ Not logged into GitHub CLI - please run 'gh auth login'"
+        return 1
+    fi
+    echo "$user"
+    return 0
+}
+
+# Check if current user has changed and update remotes accordingly
+check_user_change() {
+    local name="$1"
+    local current_user=$(get_current_user)
+    
+    if [ $? -ne 0 ] || [ -z "$current_user" ]; then
+        return 1
+    fi
+    
+    # Check current origin remote
+    local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
+    local expected_origin="https://github.com/$current_user/$name.git"
+    
+    # If origin doesn't match current user, update it
+    if [[ "$current_origin" != "$expected_origin" ]]; then
+        echo "🔄 GitHub user changed to $current_user - updating origin remote..."
+        git remote set-url origin "$expected_origin" 2>/dev/null || {
+            echo "⚠️ Failed to update origin remote for $current_user"
+            return 1
+        }
+        echo "🔧 Updated origin to point to $current_user/$name"
+    fi
+    return 0
+}
+
 # Create fork and update remote to user's fork
 setup_fork() {
     local name="$1"
     local parent_account="$2"
     
-    echo "🍴 Creating fork of $parent_account/$name..."
+    local current_user=$(get_current_user)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    echo "🍴 Creating fork of $parent_account/$name for $current_user..."
     
     # Create fork (gh handles case where fork already exists)
     local fork_url=$(gh repo fork "$parent_account/$name" --clone=false 2>/dev/null || echo "")
@@ -82,12 +123,12 @@ setup_fork() {
         
         # Update origin to point to user's fork
         git remote set-url origin "$fork_url.git" 2>/dev/null || \
-        git remote set-url origin "https://github.com/$(gh api user --jq .login)/$name.git"
+        git remote set-url origin "https://github.com/$current_user/$name.git"
         
-        echo "🔧 Updated origin remote to point to your fork"
+        echo "🔧 Updated origin remote to point to $current_user fork"
         return 0
     else
-        echo "⚠️ Failed to create/find fork"
+        echo "⚠️ Failed to create/find fork for $current_user"
         return 1
     fi
 }
@@ -98,8 +139,8 @@ update_webroot_submodule_reference() {
     local commit_hash="$2"
     
     # Get current user login
-    local user_login=$(gh api user --jq .login 2>/dev/null || echo "")
-    if [ -z "$user_login" ]; then
+    local user_login=$(get_current_user)
+    if [ $? -ne 0 ]; then
         echo "⚠️ Could not determine GitHub username"
         return 1
     fi
@@ -172,6 +213,9 @@ commit_push() {
     
     # Fix detached HEAD before committing
     fix_detached_head "$name"
+    
+    # Check if GitHub user has changed and update remotes
+    check_user_change "$name"
     
     if [ -n "$(git status --porcelain)" ]; then
         git add .
@@ -349,6 +393,59 @@ fix_all_detached_heads() {
     fi
 }
 
+# Check and update all remotes for current GitHub user
+update_all_remotes_for_user() {
+    echo "🔄 Updating all remotes for current GitHub user..."
+    cd $(git rev-parse --show-toplevel)
+    check_webroot
+    
+    local current_user=$(get_current_user)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    echo "👤 Current GitHub user: $current_user"
+    local updated_count=0
+    
+    # Check webroot
+    echo "📁 Checking webroot remotes..."
+    if check_user_change "webroot"; then
+        ((updated_count++))
+    fi
+    
+    # Check all submodules
+    echo "📁 Checking submodule remotes..."
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+        if [ -d "$sub" ]; then
+            echo "📁 Checking $sub remotes..."
+            cd "$sub"
+            if check_user_change "$sub"; then
+                ((updated_count++))
+            fi
+            cd ..
+        fi
+    done
+    
+    # Check trade repos
+    echo "📁 Checking trade repo remotes..."
+    for repo in exiobase profile useeio.js io; do
+        if [ -d "$repo" ]; then
+            echo "📁 Checking $repo remotes..."
+            cd "$repo"
+            if check_user_change "$repo"; then
+                ((updated_count++))
+            fi
+            cd ..
+        fi
+    done
+    
+    if [ $updated_count -gt 0 ]; then
+        echo "✅ Updated remotes for $updated_count repositories to $current_user"
+    else
+        echo "✅ All remotes already point to $current_user"
+    fi
+}
+
 # Create PR for webroot to its parent
 create_webroot_pr() {
     local skip_pr="$1"
@@ -378,10 +475,13 @@ create_webroot_pr() {
     echo "📝 Creating webroot PR to $parent_account/webroot..."
     
     # Get current user login for head specification
-    local user_login=$(gh api user --jq .login 2>/dev/null || echo "")
+    local user_login=$(get_current_user)
     local head_spec="main"
-    if [ -n "$user_login" ]; then
+    if [ $? -eq 0 ] && [ -n "$user_login" ]; then
         head_spec="$user_login:main"
+    else
+        echo "⚠️ Could not determine current user for PR creation"
+        return 1
     fi
     
     local pr_url=$(gh pr create \
@@ -508,8 +608,11 @@ case "$1" in
     "fix-heads"|"fix")
         fix_all_detached_heads
         ;;
+    "update-remotes"|"remotes")
+        update_all_remotes_for_user
+        ;;
     *)
-        echo "Usage: ./git.sh [update|commit|fix] [submodule_name|submodules] [nopr]"
+        echo "Usage: ./git.sh [update|commit|fix|remotes] [submodule_name|submodules] [nopr]"
         echo ""
         echo "Commands:"
         echo "  ./git.sh update                    - Run comprehensive update workflow"
@@ -517,6 +620,7 @@ case "$1" in
         echo "  ./git.sh commit [name]             - Commit specific submodule"
         echo "  ./git.sh commit submodules         - Commit all submodules only"
         echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
+        echo "  ./git.sh remotes                   - Update all remotes to current GitHub user"
         echo ""
         echo "Options:"
         echo "  nopr                               - Skip PR creation on push failures"
