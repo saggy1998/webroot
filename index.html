@@ -66,6 +66,12 @@ loadMarkdown("README.md", "readmeDiv", "_parent", 1, function() {
     setTimeout(() => {
         setupWebrootSetup('webrootSetup');
         setupGitAccountFields('textInPage');
+        setupTradeFlowRepos('tradeFlowRepos');
+        
+        // Update fork repos commands after README loads and fields are setup
+        setTimeout(() => {
+            updateForkReposCommands();
+        }, 100);
     }, 200);
     
     // Process webroot path and port adjustments in #readmeDiv after README loads
