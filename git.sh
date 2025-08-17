@@ -287,11 +287,19 @@ create_webroot_pr() {
     fi
     
     echo "📝 Creating webroot PR to $parent_account/webroot..."
+    
+    # Get current user login for head specification
+    local user_login=$(gh api user --jq .login 2>/dev/null || echo "")
+    local head_spec="main"
+    if [ -n "$user_login" ]; then
+        head_spec="$user_login:main"
+    fi
+    
     local pr_url=$(gh pr create \
         --title "Update webroot with submodule changes" \
         --body "Automated webroot update from git.sh commit workflow - includes submodule reference updates and configuration changes" \
         --base main \
-        --head main \
+        --head "$head_spec" \
         --repo "$parent_account/webroot" 2>/dev/null || echo "")
     
     if [ -n "$pr_url" ]; then
@@ -330,7 +338,7 @@ commit_submodule() {
         fi
         
         # Check if we need to create a webroot PR (for when webroot push succeeded but we want PR anyway)
-        local webroot_commits_ahead=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+        local webroot_commits_ahead=$(git rev-list --count upstream/main..HEAD 2>/dev/null || echo "0")
         if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
             create_webroot_pr "$skip_pr"
         fi
@@ -375,7 +383,7 @@ commit_all() {
     commit_push "webroot" "$skip_pr"
     
     # Check if webroot needs PR after direct changes
-    local webroot_commits_ahead=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+    local webroot_commits_ahead=$(git rev-list --count upstream/main..HEAD 2>/dev/null || echo "0")
     if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
         create_webroot_pr "$skip_pr"
     fi
