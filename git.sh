@@ -353,10 +353,10 @@ commit_push() {
     # Fix detached HEAD before committing
     fix_detached_head "$name"
     
-    # Check if GitHub user has changed and update remotes
-    check_user_change "$name"
-    
+    # Check if there are changes to commit first
     if [ -n "$(git status --porcelain)" ]; then
+        # Only check user change and update remotes when there are actual changes
+        check_user_change "$name"
         git add .
         git commit -m "Update $name"
         local commit_hash=$(git rev-parse HEAD)
