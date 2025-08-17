@@ -238,3 +238,6 @@ case "$1" in
         exit 1
         ;;
 esac
+
+# Always return to webroot repository root at the end
+cd $(git rev-parse --show-toplevel)
