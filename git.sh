@@ -373,6 +373,7 @@ commit_push() {
         if is_repo_owner "$name"; then
             echo "✅ User owns $name repository - attempting direct push"
             # Try multiple push strategies for owned repositories
+            local push_error=""
             if git push origin HEAD:$target_branch 2>/dev/null; then
                 echo "✅ Successfully pushed $name to $target_branch branch"
                 ensure_push_completion "$name"
@@ -381,20 +382,29 @@ commit_push() {
                 echo "✅ Successfully pushed $name to $target_branch"
                 ensure_push_completion "$name"
                 return 0
-            elif git push 2>/dev/null; then
+            elif push_error=$(git push 2>&1); then
                 echo "✅ Successfully pushed $name"
                 ensure_push_completion "$name"
                 return 0
             else
-                echo "⚠️ Push failed for owned repository $name - this shouldn't happen"
-                echo "💡 Trying force push with lease..."
-                if git push --force-with-lease 2>/dev/null; then
-                    echo "✅ Force pushed $name"
-                    ensure_push_completion "$name"
-                    return 0
-                else
-                    echo "❌ All push strategies failed for owned repo $name"
+                # Check for specific OAuth workflow scope error
+                if [[ "$push_error" == *"workflow"* ]] && [[ "$push_error" == *"OAuth"* ]]; then
+                    echo "🔒 GitHub OAuth token lacks 'workflow' scope for updating GitHub Actions"
+                    echo "💡 To fix this, run: gh auth refresh -h github.com -s workflow"
+                    echo "💡 Then retry the commit command"
                     return 1
+                else
+                    echo "⚠️ Push failed for owned repository $name with error:"
+                    echo "$push_error"
+                    echo "💡 Trying force push with lease..."
+                    if git push --force-with-lease 2>/dev/null; then
+                        echo "✅ Force pushed $name"
+                        ensure_push_completion "$name"
+                        return 0
+                    else
+                        echo "❌ All push strategies failed for owned repo $name"
+                        return 1
+                    fi
                 fi
             fi
         else
