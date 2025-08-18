@@ -98,10 +98,10 @@ is_repo_owner() {
             return 0  # Likely a fork owned by the user
         fi
         
-        # Special case: if pointing to ModelEarth/webroot, assume user has access
-        # (since they wouldn't have this repo cloned unless they have access)
-        if [[ "$repo_owner" == "ModelEarth" ]] && [[ "$repo_name" == "webroot" ]]; then
-            return 0  # Assume user has access to ModelEarth/webroot
+        # Special case: if pointing to ModelEarth repositories, assume user has access
+        # (since they wouldn't have these repos cloned unless they have access)
+        if [[ "$repo_owner" == "ModelEarth" ]]; then
+            return 0  # Assume user has access to ModelEarth repositories
         fi
     fi
     
