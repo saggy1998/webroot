@@ -19,10 +19,13 @@ When you type "start rust", change to the team submodule directory in the reposi
 cd team
 # Ensure Rust is installed and cargo is in PATH
 source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-nohup cargo run -- serve > server.log 2>&1 &
+# Copy .env.example to .env only if .env doesn't exist
+[ ! -f .env ] && cp .env.example .env
+# Start the server with correct binary name
+nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
 ```
 
-Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system.
+Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system. The .env file is created from .env.example only if it doesn't already exist.
 
 ### Update submodules:
 When you type "update submodules", run
