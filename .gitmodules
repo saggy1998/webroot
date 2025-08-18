@@ -3,7 +3,7 @@
 	url = https://github.com/ModelEarth/localsite
 [submodule "feed"]
 	path = feed
-	url = https://github.com/modelearth/feed
+	url = https://github.com/saggy1998/feed
 [submodule "swiper"]
 	path = swiper
 	url = https://github.com/modelearth/swiper
