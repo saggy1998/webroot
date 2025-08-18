@@ -5,6 +5,7 @@ trade-data
 useeio.js
 io
 codechat
+membersense
 
 # Configuration files with sensitive data
 config/settings.js
