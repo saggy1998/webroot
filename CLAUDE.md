@@ -49,6 +49,15 @@ gh pr create --title "Update [submodule name]" --body "Description of changes"
 cd ..
 ```
 
+## IMPORTANT: Git Commit Policy
+
+**NEVER commit changes without explicit user request.** 
+
+- Only run git commands (add, commit, push) when the user specifically says "commit" or directly requests it
+- After making code changes, STOP and wait for user instruction
+- Build and test changes as needed, but do not commit automatically
+- The user controls when changes are committed to the repository
+
 ## Comprehensive Update Command
 
 ### Update
