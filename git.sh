@@ -83,40 +83,28 @@ is_repo_owner() {
     local repo_name="$1"
     local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
     
-    echo "🔍 Debug: Checking ownership for repo: $repo_name"
-    echo "🔍 Debug: Origin URL: $current_origin"
-    
     # Extract username from origin URL
     if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$repo_name ]]; then
         local repo_owner="${BASH_REMATCH[1]}"
-        echo "🔍 Debug: Repo owner extracted: $repo_owner"
         
         # Try to get GitHub CLI user first
         local gh_user=$(get_current_user)
         local gh_result=$?
-        echo "🔍 Debug: GitHub CLI user: $gh_user (result: $gh_result)"
         
         if [ $gh_result -eq 0 ] && [ "$gh_user" = "$repo_owner" ]; then
-            echo "✅ Debug: User owns repo via GitHub CLI match"
             return 0  # User owns the repo via GitHub CLI
         fi
         
         # If GitHub CLI fails, check if it's a personal fork (not ModelEarth/modelearth)
         if [[ "$repo_owner" != "ModelEarth" ]] && [[ "$repo_owner" != "modelearth" ]]; then
-            echo "✅ Debug: Personal fork detected"
             return 0  # Likely a fork owned by the user
         fi
         
         # Special case: if pointing to ModelEarth repositories, assume user has access
         # (since they wouldn't have these repos cloned unless they have access)
         if [[ "$repo_owner" == "ModelEarth" ]]; then
-            echo "✅ Debug: ModelEarth repository access assumed"
             return 0  # Assume user has access to ModelEarth repositories
         fi
-        
-        echo "❌ Debug: No ownership conditions met"
-    else
-        echo "❌ Debug: Origin URL regex didn't match"
     fi
     
     return 1  # Not the owner or couldn't determine
@@ -381,70 +369,100 @@ commit_push() {
             target_branch="dev"
         fi
         
-        # Try to push directly first
-        if git push origin HEAD:$target_branch 2>/dev/null; then
-            echo "✅ Successfully pushed $name to $target_branch branch"
-            # Ensure all pending commits are pushed
-            ensure_push_completion "$name"
-            return 0
-        fi
-        
-        # If direct push fails, check if it's a permission issue
-        local push_output=$(git push origin HEAD:$target_branch 2>&1)
-        if [[ "$push_output" == *"Permission denied"* ]] || [[ "$push_output" == *"403"* ]]; then
-            echo "🔒 Permission denied - setting up fork workflow..."
-            
-            # Detect parent account
-            local parent_account=$(get_parent_account "$name")
-            echo "📍 Detected parent: $parent_account/$name"
-            
-            # Setup fork and update remote
-            if setup_fork "$name" "$parent_account"; then
-                # Try pushing to fork
-                if git push origin HEAD:$target_branch 2>/dev/null; then
-                    echo "✅ Successfully pushed $name to your fork"
+        # Check if user owns the repository
+        if is_repo_owner "$name"; then
+            echo "✅ User owns $name repository - attempting direct push"
+            # Try multiple push strategies for owned repositories
+            if git push origin HEAD:$target_branch 2>/dev/null; then
+                echo "✅ Successfully pushed $name to $target_branch branch"
+                ensure_push_completion "$name"
+                return 0
+            elif git push origin $target_branch 2>/dev/null; then
+                echo "✅ Successfully pushed $name to $target_branch"
+                ensure_push_completion "$name"
+                return 0
+            elif git push 2>/dev/null; then
+                echo "✅ Successfully pushed $name"
+                ensure_push_completion "$name"
+                return 0
+            else
+                echo "⚠️ Push failed for owned repository $name - this shouldn't happen"
+                echo "💡 Trying force push with lease..."
+                if git push --force-with-lease 2>/dev/null; then
+                    echo "✅ Force pushed $name"
                     ensure_push_completion "$name"
+                    return 0
                 else
-                    # Force push if normal push fails
-                    echo "🔄 Normal push failed, trying force push..."
-                    if git push --force-with-lease origin HEAD:$target_branch 2>/dev/null; then
-                        echo "✅ Force pushed $name to your fork"
+                    echo "❌ All push strategies failed for owned repo $name"
+                    return 1
+                fi
+            fi
+        else
+            echo "🔒 User does not own $name repository - trying fork workflow"
+            # Try to push directly first in case we have access
+            if git push origin HEAD:$target_branch 2>/dev/null; then
+                echo "✅ Successfully pushed $name to $target_branch branch"
+                ensure_push_completion "$name"
+                return 0
+            fi
+            
+            # If direct push fails, check if it's a permission issue
+            local push_output=$(git push origin HEAD:$target_branch 2>&1)
+            if [[ "$push_output" == *"Permission denied"* ]] || [[ "$push_output" == *"403"* ]]; then
+                echo "🔒 Permission denied - setting up fork workflow..."
+                
+                # Detect parent account
+                local parent_account=$(get_parent_account "$name")
+                echo "📍 Detected parent: $parent_account/$name"
+                
+                # Setup fork and update remote
+                if setup_fork "$name" "$parent_account"; then
+                    # Try pushing to fork
+                    if git push origin HEAD:$target_branch 2>/dev/null; then
+                        echo "✅ Successfully pushed $name to your fork"
                         ensure_push_completion "$name"
                     else
-                        echo "⚠️ Failed to push $name to fork"
-                        return 1
+                        # Force push if normal push fails
+                        echo "🔄 Normal push failed, trying force push..."
+                        if git push --force-with-lease origin HEAD:$target_branch 2>/dev/null; then
+                            echo "✅ Force pushed $name to your fork"
+                            ensure_push_completion "$name"
+                        else
+                            echo "⚠️ Failed to push $name to fork"
+                            return 1
+                        fi
                     fi
-                fi
-                
-                # Create PR if not skipped
-                if [[ "$skip_pr" != "nopr" ]]; then
-                    echo "📝 Creating pull request..."
-                    local pr_url=$(gh pr create \
-                        --title "Update $name" \
-                        --body "Automated update from git.sh commit workflow" \
-                        --base $target_branch \
-                        --head $target_branch \
-                        --repo "$parent_account/$name" 2>/dev/null || echo "")
                     
-                    if [ -n "$pr_url" ]; then
-                        echo "🔄 Created PR: $pr_url"
-                    else
-                        echo "⚠️ PR creation failed for $name"
+                    # Create PR if not skipped
+                    if [[ "$skip_pr" != "nopr" ]]; then
+                        echo "📝 Creating pull request..."
+                        local pr_url=$(gh pr create \
+                            --title "Update $name" \
+                            --body "Automated update from git.sh commit workflow" \
+                            --base $target_branch \
+                            --head $target_branch \
+                            --repo "$parent_account/$name" 2>/dev/null || echo "")
+                        
+                        if [ -n "$pr_url" ]; then
+                            echo "🔄 Created PR: $pr_url"
+                        else
+                            echo "⚠️ PR creation failed for $name"
+                        fi
                     fi
+                    
+                    # Update webroot submodule reference if this is a submodule
+                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
+                        update_webroot_submodule_reference "$name" "$commit_hash"
+                    fi
+                else
+                    echo "⚠️ Failed to push to fork"
                 fi
-                
-                # Update webroot submodule reference if this is a submodule
-                if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
-                    update_webroot_submodule_reference "$name" "$commit_hash"
-                fi
-            else
-                echo "⚠️ Failed to push to fork"
+            elif [[ "$skip_pr" != "nopr" ]]; then
+                # Other push failure - try feature branch PR
+                git push origin HEAD:feature-$name-updates 2>/dev/null && \
+                gh pr create --title "Update $name" --body "Automated update" --base $target_branch --head feature-$name-updates 2>/dev/null || \
+                echo "🔄 PR creation failed for $name"
             fi
-        elif [[ "$skip_pr" != "nopr" ]]; then
-            # Other push failure - try feature branch PR
-            git push origin HEAD:feature-$name-updates 2>/dev/null && \
-            gh pr create --title "Update $name" --body "Automated update" --base $target_branch --head feature-$name-updates 2>/dev/null || \
-            echo "🔄 PR creation failed for $name"
         fi
     fi
 }
