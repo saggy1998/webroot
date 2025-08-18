@@ -11,6 +11,19 @@ nohup python -m http.server 8887 > /dev/null 2>&1 &
 
 Note: Uses nohup to run server in background and redirect output to avoid timeout.
 
+
+### Start Rust API Server
+When you type "start rust", change to the team submodule directory in the repository root and run
+
+```bash
+cd team
+# Ensure Rust is installed and cargo is in PATH
+source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+nohup cargo run -- serve > server.log 2>&1 &
+```
+
+Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system.
+
 ### Update submodules:
 When you type "update submodules", run
 ```bash
