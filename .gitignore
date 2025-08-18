@@ -6,6 +6,10 @@ useeio.js
 io
 codechat
 membersense
+data-commons
+data-pipeline
+community-data
+community-timelines
 
 # Configuration files with sensitive data
 config/settings.js
