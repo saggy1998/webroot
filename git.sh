@@ -83,26 +83,40 @@ is_repo_owner() {
     local repo_name="$1"
     local current_origin=$(git remote get-url origin 2>/dev/null || echo "")
     
+    echo "🔍 Debug: Checking ownership for repo: $repo_name"
+    echo "🔍 Debug: Origin URL: $current_origin"
+    
     # Extract username from origin URL
     if [[ "$current_origin" =~ github\.com[:/]([^/]+)/$repo_name ]]; then
         local repo_owner="${BASH_REMATCH[1]}"
+        echo "🔍 Debug: Repo owner extracted: $repo_owner"
         
         # Try to get GitHub CLI user first
         local gh_user=$(get_current_user)
-        if [ $? -eq 0 ] && [ "$gh_user" = "$repo_owner" ]; then
+        local gh_result=$?
+        echo "🔍 Debug: GitHub CLI user: $gh_user (result: $gh_result)"
+        
+        if [ $gh_result -eq 0 ] && [ "$gh_user" = "$repo_owner" ]; then
+            echo "✅ Debug: User owns repo via GitHub CLI match"
             return 0  # User owns the repo via GitHub CLI
         fi
         
         # If GitHub CLI fails, check if it's a personal fork (not ModelEarth/modelearth)
         if [[ "$repo_owner" != "ModelEarth" ]] && [[ "$repo_owner" != "modelearth" ]]; then
+            echo "✅ Debug: Personal fork detected"
             return 0  # Likely a fork owned by the user
         fi
         
         # Special case: if pointing to ModelEarth repositories, assume user has access
         # (since they wouldn't have these repos cloned unless they have access)
         if [[ "$repo_owner" == "ModelEarth" ]]; then
+            echo "✅ Debug: ModelEarth repository access assumed"
             return 0  # Assume user has access to ModelEarth repositories
         fi
+        
+        echo "❌ Debug: No ownership conditions met"
+    else
+        echo "❌ Debug: Origin URL regex didn't match"
     fi
     
     return 1  # Not the owner or couldn't determine
