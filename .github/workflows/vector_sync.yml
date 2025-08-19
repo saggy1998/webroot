@@ -4,17 +4,37 @@ on:
   # Run when a PR is merged into main
   pull_request:
     types: [closed]
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'data/**'
+      - 'requirements.txt'
+      - '.gitmodules'
+      - '**/*.py'
+      - '**/*.js'
+      - 'CLAUDE.md'
 
   # Run on direct pushes to main branch
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'data/**'
+      - 'requirements.txt'
+      - '.gitmodules'
+      - '**/*.py'
+      - '**/*.js'
+      - 'CLAUDE.md'
 
 jobs:
   sync:
     # For PR: only if merged into main
     if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
@@ -32,24 +52,32 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -e
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
+          pip install -r requirements.txt
 
       - name: Detect changed files (root + submodules)
         run: |
+          set -e  # fail on errors
+
           echo "🔎 Detecting changes..."
+
           if [ "${{ github.event_name }}" == "push" ]; then
             echo "Push to main branch detected"
-            git diff --name-status HEAD^ HEAD > changed_files.txt || true
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
           else
             echo "Pull request merged into main detected"
-            git diff --name-status origin/main HEAD > changed_files.txt || true
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.sha }}"
           fi
 
+          echo "Comparing $base_sha → $head_sha"
+          git diff --name-status $base_sha $head_sha > changed_files.txt
           cat changed_files.txt
 
           echo "🔎 Detecting submodule pointer changes..."
-          git diff --submodule > submodule_changes.txt || true
+          git diff --submodule $base_sha $head_sha > submodule_changes.txt || true
           cat submodule_changes.txt
 
           echo "🔎 Expanding submodule changes into file-level diffs..."
@@ -64,14 +92,20 @@ jobs:
               git diff --name-status $oldsha $newsha | sed "s|^|$submodule/|" >> ../changed_files.txt
               popd > /dev/null
             fi
-          done < <(git diff --submodule | grep Submodule)
+          done < <(git diff --submodule $base_sha $head_sha | grep Submodule)
 
           echo "✅ Final changed files list:"
           cat changed_files.txt
 
-#      - name: Run VectorDB Sync
-#        env:
-#          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-#          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-#        run: |
-#          python scripts/sync_pinecone.py changed_files.txt
+      - name: Skip notice if no changes
+        if: hashFiles('changed_files.txt') == ''
+        run: echo "⚡ No relevant file changes detected — skipping VectorDB sync"
+
+      - name: Run VectorDB Sync
+        if: success() && hashFiles('changed_files.txt') != ''
+        env:
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "🚀 Running VectorDB Sync (changes detected)"
+          python scripts/sync_pinecone.py changed_files.txt
