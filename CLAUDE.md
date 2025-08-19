@@ -2,9 +2,30 @@
 
 ## Start server or Restart server
 
+### Start Server
+When you type "start server", run
+
+```bash
 nohup python -m http.server 8887 > /dev/null 2>&1 &
+```
 
 Note: Uses nohup to run server in background and redirect output to avoid timeout.
+
+
+### Start Rust API Server
+When you type "start rust", change to the team submodule directory in the repository root and run
+
+```bash
+cd team
+# Ensure Rust is installed and cargo is in PATH
+source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+# Copy .env.example to .env only if .env doesn't exist
+[ ! -f .env ] && cp .env.example .env
+# Start the server with correct binary name
+nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
+```
+
+Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system. The .env file is created from .env.example only if it doesn't already exist.
 
 ### Update submodules:
 When you type "update submodules", run
@@ -31,6 +52,15 @@ gh pr create --title "Update [submodule name]" --body "Description of changes"
 cd ..
 ```
 
+## IMPORTANT: Git Commit Policy
+
+**NEVER commit changes without explicit user request.** 
+
+- Only run git commands (add, commit, push) when the user specifically says "commit" or directly requests it
+- After making code changes, STOP and wait for user instruction
+- Build and test changes as needed, but do not commit automatically
+- The user controls when changes are committed to the repository
+
 ## Comprehensive Update Command
 
 ### Update
@@ -41,6 +71,29 @@ When you type "Update", run this comprehensive update workflow that pulls from a
 ```
 
 All complex git operations are now handled by the git.sh script to avoid shell parsing issues.
+
+### GitHub Account Management
+The git.sh script automatically detects the current GitHub CLI user and adapts accordingly:
+
+```bash
+gh auth logout                    # Log out of current GitHub account
+gh auth login                     # Log into different GitHub account
+./git.sh auth                     # Refresh git credentials and update all remotes
+```
+
+When you switch GitHub accounts, the script will:
+- **Automatically detect** the new user during commit/update operations
+- **Clear cached git credentials** from previous account
+- **Refresh authentication** to use new GitHub CLI credentials  
+- **Update remote URLs** to point to the new user's forks
+- **Create PRs** from the new user's account
+- **Fork repositories** to the new user's account when needed
+
+**Automatic Credential Management:**
+- Detects when GitHub user has changed since last run
+- Clears cached credentials from credential manager and macOS keychain
+- Runs `gh auth setup-git` to sync git with GitHub CLI
+- Prevents permission denied errors from stale credentials
 
 **Update Command Features:**
 - **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories

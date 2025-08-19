@@ -21,8 +21,7 @@
       "Bash(rm:*)",
       "Bash(curl:*)",
       "Bash(gh:*)",
-      "Bash(./git.sh:*)",
-      "Bash(./git.sh commit)"
+      "Bash(./git.sh:*)"
     ],
     "deny": [
       "Read(../**)"
