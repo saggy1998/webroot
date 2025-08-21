@@ -158,6 +158,15 @@ git remote add upstream https://github.com/ModelEarth/webroot.git
 - If any upstream is incorrectly configured to point above modelearth level, it must be corrected
 - This prevents conflicts from pulling changes from repositories outside the modelearth ecosystem
 
+**GitHub Pages Integration:**
+- When creating webroot PRs, the system automatically checks for GitHub Pages on the user's fork
+- If GitHub Pages is not enabled, it attempts to enable it automatically using the GitHub CLI
+- PRs include live preview links to `[username].github.io/webroot` for easy review
+- If automatic setup fails, users receive manual setup instructions and interactive options:
+  - **Y** - Continue with PR creation (recommended)
+  - **N** - Skip PR creation and continue with commit only
+  - **Q** - Quit without creating PR or committing
+
 ### Repository Root Navigation
 **CRITICAL**: Always ensure you're in the webroot repository before executing any commands. The CLI session is pointed to the webroot directory, and all operations must start from there:
 
