@@ -96,14 +96,14 @@ When you switch GitHub accounts, the script will:
 - Prevents permission denied errors from stale credentials
 
 **Update Command Features:**
-- **Pull from Parents**: Updates webroot, submodules, and trade repos from their respective ModelEarth parent repositories
+- **Pull from Parents**: Updates webroot, submodules, and industry repos from their respective ModelEarth parent repositories
 - **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks
 - **Partnertools Exclusion**: Completely skips any repositories associated with partnertools GitHub account
 - **Merge Strategy**: Uses automatic merge with no-edit to incorporate upstream changes
 - **Conflict Handling**: Reports merge conflicts for manual resolution when they occur  
 - **Status Reporting**: Provides clear feedback on what was updated and any issues encountered
 - **Push Guidance**: Prompts user with specific commands for pushing changes back to forks and parent repos
-- **Comprehensive Workflow**: Handles webroot, all submodules, and all trade repositories in one command
+- **Comprehensive Workflow**: Handles webroot, all submodules, and all industry repositories in one command
 
 **Post-Update Recommendations:**
 After running "./git.sh update", review changes and use these commands as needed:
@@ -114,7 +114,7 @@ After running "./git.sh update", review changes and use these commands as needed
 **Git.sh Usage:**
 ```bash
 ./git.sh update                    # Full update workflow  
-./git.sh commit                    # Complete commit: webroot, all submodules, and trade repos
+./git.sh commit                    # Complete commit: webroot, all submodules, and industry repos
 ./git.sh commit [name]             # Commit specific submodule
 ./git.sh commit submodules         # Commit all submodules only
 ./git.sh commit [name] nopr        # Skip PR creation on push failures
@@ -143,7 +143,7 @@ This repository contains the following git submodules configured in `.gitmodules
 **CRITICAL**: The maximum upstream level for all repositories is `modelearth`
 
 - **Webroot and Submodules**: Upstream should point to `modelearth` or `ModelEarth` repositories only
-- **Trade Repositories**: Upstream should point to `modelearth` repositories only  
+- **Industry Repositories**: Upstream should point to `modelearth` repositories only  
 - **Repository Hierarchy**: `user-fork` → `modelearth` (STOP - do not go higher)
 
 **Example Correct Upstream Configuration:**
@@ -259,7 +259,7 @@ fi
 - **"push [submodule name]"**: Only push submodule changes (steps 1-3)
 - **"PR [submodule name]"**: Create pull request workflow
 - **"commit submodules [nopr]"**: Commit all submodules with PR fallback when push fails
-- **"commit forks [nopr]"**: Commit all trade repo forks and create PRs to parent repos
+- **"commit forks [nopr]"**: Commit all industry repo forks and create PRs to parent repos
 - **"commit [nopr]"**: Complete commit workflow with PR fallback - commits webroot, all submodules, and all forks
 
 **PR Fallback Behavior**: All commit commands automatically create pull requests when direct push fails due to permission restrictions. Add 'nopr' or 'No PR' (case insensitive) at the end of any commit command to skip PR creation.
@@ -306,21 +306,21 @@ When you type "confirm" or "less quick", remove it:
 ]
 ```
 
-## Trade Repositories
+## Industry Repositories
 
-### Trade Repo List
-The following trade repositories are used for multi-regional input-output (MRIO) analysis:
+### Industry Repo List
+The following industry repositories are used for multi-regional input-output (MRIO) analysis:
 - **trade** - https://github.com/modelearth/trade (submodule)
 - **exiobase** - https://github.com/modelearth/exiobase
 - **profile** - https://github.com/modelearth/profile
 - **io** - https://github.com/modelearth/io
 
-**IMPORTANT**: The trade repo is now a submodule. Other trade repos are cloned to the webroot root directory, not as submodules, since typical sites only use trade output via the existing comparison submodule.
+**IMPORTANT**: The industry repos (except trade) are cloned to the webroot root directory. They are not submodules, since typical sites only use industry output via the existing comparison submodule.
 
-### Fork Trade Repos
+### Fork Industry Repos
 
 ```bash
-fork trade repos to [your github account]
+fork industry repos to [your github account]
 ```
 
 The above runs these commands:
@@ -331,10 +331,10 @@ gh repo fork modelearth/profile --clone=false
 gh repo fork modelearth/io --clone=false
 ```
 
-### Clone Trade Repos
+### Clone Industry Repos
 
 ```bash
-clone trade repos from [your github account]
+clone industry repos from [your github account]
 ```
 
 The above runs these commands:
@@ -342,7 +342,7 @@ The above runs these commands:
 # Navigate to webroot repository root first
 cd $(git rev-parse --show-toplevel)
 
-# Clone trade repos to webroot root
+# Clone industry repos to webroot root
 git clone https://github.com/[your github account]/exiobase exiobase
 git clone https://github.com/[your github account]/profile profile
 git clone https://github.com/[your github account]/io io
@@ -394,13 +394,13 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 ```
 
-### Commit Trade Repo Forks
+### Commit Industry Repo Forks
 
 ```bash
 commit forks [nopr]
 ```
 
-The above commits changes to all trade repo forks and creates pull requests to their parent repositories:
+The above commits changes to all industry repo forks and creates pull requests to their parent repositories:
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
 cd $(git rev-parse --show-toplevel)
@@ -409,7 +409,7 @@ if [[ "$*" =~ (nopr|no\ pr)$ ]] || [[ "$*" =~ (NOPR|NO\ PR)$ ]]; then
   SKIP_PR=true
 fi
 
-# Check each trade repo for changes and create PRs
+# Check each industry repo for changes and create PRs
 for repo in exiobase profile io; do
   if [ -d "$repo" ]; then
     cd "$repo"
@@ -439,7 +439,7 @@ for repo in exiobase profile io; do
 done
 ```
 
-**Note**: This command requires GitHub CLI (gh) to be installed and authenticated for PR creation. It will create PRs for all trade repo forks unless 'nopr' is specified. Use 'commit forks nopr' to skip PR creation.
+**Note**: This command requires GitHub CLI (gh) to be installed and authenticated for PR creation. It will create PRs for all industry repo forks unless 'nopr' is specified. Use 'commit forks nopr' to skip PR creation.
 
 **Common Issues:**
 - **Repository moved errors**: Update remote URLs if you see "This repository moved" messages:
@@ -455,7 +455,7 @@ done
 commit [nopr]
 ```
 
-The above runs a comprehensive commit workflow that handles webroot, all submodules, and all trade repo forks with automatic PR creation:
+The above runs a comprehensive commit workflow that handles webroot, all submodules, and all industry repo forks with automatic PR creation:
 
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
@@ -504,7 +504,7 @@ if [ -n "$(git status --porcelain)" ]; then
   fi
 fi
 
-# Step 4: Commit trade repo forks and create PRs
+# Step 4: Commit industry repo forks and create PRs
 for repo in exiobase profile io; do
   if [ -d "$repo" ]; then
     cd "$repo"

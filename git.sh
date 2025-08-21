@@ -514,8 +514,8 @@ update_command() {
     echo "🔍 Checking for detached HEAD states after update..."
     fix_all_detached_heads
     
-    # Update trade repos
-    echo "📥 Updating trade repos..."
+    # Update industry repos
+    echo "📥 Updating industry repos..."
     for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
@@ -559,8 +559,8 @@ fix_all_detached_heads() {
         fi
     done
     
-    # Check trade repos
-    echo "📁 Checking trade repos..."
+    # Check industry repos
+    echo "📁 Checking industry repos..."
     for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo..."
@@ -613,8 +613,8 @@ update_all_remotes_for_user() {
         fi
     done
     
-    # Check trade repos
-    echo "📁 Checking trade repo remotes..."
+    # Check industry repos
+    echo "📁 Checking industry repo remotes..."
     for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo remotes..."
@@ -775,7 +775,7 @@ commit_all() {
     # Commit all submodules
     commit_submodules "$skip_pr"
     
-    # Commit trade repos
+    # Commit industry repos
     for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
@@ -812,7 +812,7 @@ final_push_completion_check() {
         fi
     done
     
-    # Check trade repos
+    # Check industry repos
     for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             cd "$repo"
@@ -857,7 +857,7 @@ case "$1" in
         echo ""
         echo "Commands:"
         echo "  ./git.sh update                    - Run comprehensive update workflow"
-        echo "  ./git.sh commit                    - Commit webroot, all submodules, and trade repos"
+        echo "  ./git.sh commit                    - Commit webroot, all submodules, and industry repos"
         echo "  ./git.sh commit [name]             - Commit specific submodule"
         echo "  ./git.sh commit submodules         - Commit all submodules only"
         echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
