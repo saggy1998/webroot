@@ -134,26 +134,23 @@ This repository contains the following git submodules configured in `.gitmodules
 - **projects** - https://github.com/modelearth/projects
 - **realitystream** - https://github.com/modelearth/realitystream
 - **cloud** - https://github.com/modelearth/cloud
+- **trade** - https://github.com/modelearth/trade
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
 ### Upstream Repository Policy
 
-**CRITICAL**: The maximum upstream level for all repositories is `modelearth` - never pull from higher upstream sources like USEPA.
+**CRITICAL**: The maximum upstream level for all repositories is `modelearth`
 
 - **Webroot and Submodules**: Upstream should point to `modelearth` or `ModelEarth` repositories only
 - **Trade Repositories**: Upstream should point to `modelearth` repositories only  
-- **NEVER use USEPA** as upstream sources in any repository
 - **Repository Hierarchy**: `user-fork` → `modelearth` (STOP - do not go higher)
 
 **Example Correct Upstream Configuration:**
 ```bash
 # Correct upstream configuration
-git remote add upstream https://github.com/modelearth/useeio.js.git
+git remote add upstream https://github.com/modelearth/trade.git
 git remote add upstream https://github.com/ModelEarth/webroot.git
-
-# WRONG - never use these upstream sources
-git remote add upstream https://github.com/USEPA/useeio.js.git  # ❌ NEVER
 ```
 
 **Update Workflow Impact:**
@@ -181,7 +178,7 @@ git remote -v
 - **NEVER include paths like `/Users/username/` or `C:\Users\`** in any commands or examples
 - Always use relative paths, environment variables, or git commands to determine paths dynamically
 - Use `$(git rev-parse --show-toplevel)` when already in the correct repository context
-- If `git rev-parse --show-toplevel` returns incorrect paths (submodule/trade repo instead of webroot), the user must manually navigate to their webroot directory using their system's actual path
+- If `git rev-parse --show-toplevel` returns incorrect paths (submodule/trade repo instead of webroot), navigate up to webroot directory. Some users may give their webroot a different folder name than "webroot"
 
 **IMPORTANT**: The `git rev-parse --show-toplevel` command returns the top-level directory of whatever git repository you're currently in. If you're inside a submodule or trade repo, it will return that repository's root instead of the webroot. In such cases, you must manually navigate to your actual webroot directory location on your system.
 
@@ -313,13 +310,12 @@ When you type "confirm" or "less quick", remove it:
 
 ### Trade Repo List
 The following trade repositories are used for multi-regional input-output (MRIO) analysis:
-- **trade** - https://github.com/modelearth/trade
+- **trade** - https://github.com/modelearth/trade (submodule)
 - **exiobase** - https://github.com/modelearth/exiobase
 - **profile** - https://github.com/modelearth/profile
-- **useeio.js** - https://github.com/modelearth/useeio.js
 - **io** - https://github.com/modelearth/io
 
-**IMPORTANT**: These trade repos are cloned to the webroot root directory, not as submodules, since typical sites only use trade output via the existing comparison submodule.
+**IMPORTANT**: The trade repo is now a submodule. Other trade repos are cloned to the webroot root directory, not as submodules, since typical sites only use trade output via the existing comparison submodule.
 
 ### Fork Trade Repos
 
@@ -332,7 +328,6 @@ The above runs these commands:
 # Fork repositories using GitHub CLI (requires 'gh' to be installed and authenticated)
 gh repo fork modelearth/exiobase --clone=false
 gh repo fork modelearth/profile --clone=false
-gh repo fork modelearth/useeio.js --clone=false
 gh repo fork modelearth/io --clone=false
 ```
 
@@ -350,7 +345,6 @@ cd $(git rev-parse --show-toplevel)
 # Clone trade repos to webroot root
 git clone https://github.com/[your github account]/exiobase exiobase
 git clone https://github.com/[your github account]/profile profile
-git clone https://github.com/[your github account]/useeio.js useeio.js
 git clone https://github.com/[your github account]/io io
 ```
 
@@ -416,7 +410,7 @@ if [[ "$*" =~ (nopr|no\ pr)$ ]] || [[ "$*" =~ (NOPR|NO\ PR)$ ]]; then
 fi
 
 # Check each trade repo for changes and create PRs
-for repo in exiobase profile useeio.js io; do
+for repo in exiobase profile io; do
   if [ -d "$repo" ]; then
     cd "$repo"
     if [ -n "$(git status --porcelain)" ]; then
@@ -511,7 +505,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Step 4: Commit trade repo forks and create PRs
-for repo in exiobase profile useeio.js io; do
+for repo in exiobase profile io; do
   if [ -d "$repo" ]; then
     cd "$repo"
     if [ -n "$(git status --porcelain)" ]; then

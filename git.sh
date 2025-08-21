@@ -38,9 +38,6 @@ merge_upstream() {
         return 0
     elif git merge upstream/master --no-edit 2>/dev/null; then
         return 0
-    # Only try dev branch for useeio.js
-    elif [[ "$repo_name" == "useeio.js" ]] && git merge upstream/dev --no-edit 2>/dev/null; then
-        return 0
     else
         echo "⚠️ Merge conflicts - manual resolution needed"
         return 1
@@ -365,9 +362,6 @@ commit_push() {
         
         # Determine target branch
         local target_branch="main"
-        if [[ "$name" == "useeio.js" ]]; then
-            target_branch="dev"
-        fi
         
         # Check if user owns the repository
         if is_repo_owner "$name"; then
@@ -461,7 +455,7 @@ commit_push() {
                     fi
                     
                     # Update webroot submodule reference if this is a submodule
-                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
+                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "io" ]]; then
                         update_webroot_submodule_reference "$name" "$commit_hash"
                     fi
                 else
@@ -496,7 +490,7 @@ update_command() {
     
     # Update submodules
     echo "📥 Updating submodules..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
         
@@ -522,7 +516,7 @@ update_command() {
     
     # Update trade repos
     echo "📥 Updating trade repos..."
-    for repo in exiobase profile useeio.js io; do
+    for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
         git pull origin main 2>/dev/null || echo "⚠️ Pull conflicts in $repo"
@@ -554,7 +548,7 @@ fix_all_detached_heads() {
     
     # Check all submodules
     echo "📁 Checking submodules..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             echo "📁 Checking $sub..."
             cd "$sub"
@@ -567,7 +561,7 @@ fix_all_detached_heads() {
     
     # Check trade repos
     echo "📁 Checking trade repos..."
-    for repo in exiobase profile useeio.js io; do
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo..."
             cd "$repo"
@@ -608,7 +602,7 @@ update_all_remotes_for_user() {
     
     # Check all submodules
     echo "📁 Checking submodule remotes..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             echo "📁 Checking $sub remotes..."
             cd "$sub"
@@ -621,7 +615,7 @@ update_all_remotes_for_user() {
     
     # Check trade repos
     echo "📁 Checking trade repo remotes..."
-    for repo in exiobase profile useeio.js io; do
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo remotes..."
             cd "$repo"
@@ -741,7 +735,7 @@ commit_submodules() {
     check_webroot
     
     # Commit each submodule with changes
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
         commit_push "$sub" "$skip_pr"
@@ -782,7 +776,7 @@ commit_all() {
     commit_submodules "$skip_pr"
     
     # Commit trade repos
-    for repo in exiobase profile useeio.js io; do
+    for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
         commit_push "$repo" "$skip_pr"
@@ -807,7 +801,7 @@ final_push_completion_check() {
     fi
     
     # Check all submodules
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             cd "$sub"
             if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
@@ -819,7 +813,7 @@ final_push_completion_check() {
     done
     
     # Check trade repos
-    for repo in exiobase profile useeio.js io; do
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             cd "$repo"
             if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
