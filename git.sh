@@ -38,9 +38,6 @@ merge_upstream() {
         return 0
     elif git merge upstream/master --no-edit 2>/dev/null; then
         return 0
-    # Only try dev branch for useeio.js
-    elif [[ "$repo_name" == "useeio.js" ]] && git merge upstream/dev --no-edit 2>/dev/null; then
-        return 0
     else
         echo "⚠️ Merge conflicts - manual resolution needed"
         return 1
@@ -365,9 +362,6 @@ commit_push() {
         
         # Determine target branch
         local target_branch="main"
-        if [[ "$name" == "useeio.js" ]]; then
-            target_branch="dev"
-        fi
         
         # Check if user owns the repository
         if is_repo_owner "$name"; then
@@ -461,7 +455,7 @@ commit_push() {
                     fi
                     
                     # Update webroot submodule reference if this is a submodule
-                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "useeio.js" ]] && [[ "$name" != "io" ]]; then
+                    if [[ "$name" != "webroot" ]] && [[ "$name" != "exiobase" ]] && [[ "$name" != "profile" ]] && [[ "$name" != "io" ]]; then
                         update_webroot_submodule_reference "$name" "$commit_hash"
                     fi
                 else
@@ -496,7 +490,7 @@ update_command() {
     
     # Update submodules
     echo "📥 Updating submodules..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
         
@@ -520,9 +514,9 @@ update_command() {
     echo "🔍 Checking for detached HEAD states after update..."
     fix_all_detached_heads
     
-    # Update trade repos
-    echo "📥 Updating trade repos..."
-    for repo in exiobase profile useeio.js io; do
+    # Update industry repos
+    echo "📥 Updating industry repos..."
+    for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
         git pull origin main 2>/dev/null || echo "⚠️ Pull conflicts in $repo"
@@ -554,7 +548,7 @@ fix_all_detached_heads() {
     
     # Check all submodules
     echo "📁 Checking submodules..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             echo "📁 Checking $sub..."
             cd "$sub"
@@ -565,9 +559,9 @@ fix_all_detached_heads() {
         fi
     done
     
-    # Check trade repos
-    echo "📁 Checking trade repos..."
-    for repo in exiobase profile useeio.js io; do
+    # Check industry repos
+    echo "📁 Checking industry repos..."
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo..."
             cd "$repo"
@@ -608,7 +602,7 @@ update_all_remotes_for_user() {
     
     # Check all submodules
     echo "📁 Checking submodule remotes..."
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             echo "📁 Checking $sub remotes..."
             cd "$sub"
@@ -619,9 +613,9 @@ update_all_remotes_for_user() {
         fi
     done
     
-    # Check trade repos
-    echo "📁 Checking trade repo remotes..."
-    for repo in exiobase profile useeio.js io; do
+    # Check industry repos
+    echo "📁 Checking industry repo remotes..."
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             echo "📁 Checking $repo remotes..."
             cd "$repo"
@@ -639,7 +633,73 @@ update_all_remotes_for_user() {
     fi
 }
 
-# Create PR for webroot to its parent
+# Check if GitHub Pages is enabled for a repository
+check_github_pages() {
+    local user_login="$1"
+    local repo_name="$2"
+    
+    # Check if GitHub Pages is enabled using GitHub API
+    local pages_info=$(gh api "repos/$user_login/$repo_name/pages" 2>/dev/null || echo "")
+    if [ -n "$pages_info" ]; then
+        return 0  # Pages is enabled
+    else
+        return 1  # Pages is not enabled
+    fi
+}
+
+# Enable GitHub Pages for a repository
+enable_github_pages() {
+    local user_login="$1"
+    local repo_name="$2"
+    
+    echo "🌐 Enabling GitHub Pages for $user_login/$repo_name..."
+    
+    # Try to enable GitHub Pages using main branch
+    local result=$(gh api --method POST "repos/$user_login/$repo_name/pages" \
+        -f source.branch=main \
+        -f source.path=/ 2>/dev/null || echo "")
+    
+    if [ -n "$result" ]; then
+        echo "✅ GitHub Pages enabled for $user_login/$repo_name"
+        echo "📋 Site will be available at: https://$user_login.github.io/$repo_name"
+        return 0
+    else
+        echo "⚠️ Could not enable GitHub Pages automatically"
+        echo "💡 Please manually enable GitHub Pages in your fork:"
+        echo "   1. Go to https://github.com/$user_login/$repo_name/settings/pages"
+        echo "   2. Set Source to 'Deploy from a branch'"
+        echo "   3. Select branch: main, folder: / (root)"
+        echo "   4. Click Save"
+        echo "📋 After setup, your site will be at: https://$user_login.github.io/$repo_name"
+        echo ""
+        echo "Options:"
+        echo "  Y - Continue with PR creation (recommended)"
+        echo "  N - Skip PR creation and continue with commit only"
+        echo "  Q - Quit without creating PR or committing"
+        
+        read -p "Choose an option [Y/n/q]: " choice
+        case "${choice,,}" in
+            ""|y|yes)
+                echo "✅ Continuing with PR creation..."
+                return 0
+                ;;
+            n|no)
+                echo "⚠️ Skipping PR creation as requested"
+                return 2  # Special return code for skip PR
+                ;;
+            q|quit)
+                echo "❌ Aborting commit and PR creation"
+                return 3  # Special return code for quit
+                ;;
+            *)
+                echo "Invalid choice. Defaulting to continue with PR..."
+                return 0
+                ;;
+        esac
+    fi
+}
+
+# Create PR for webroot to its parent with GitHub Pages integration
 create_webroot_pr() {
     local skip_pr="$1"
     
@@ -677,15 +737,68 @@ create_webroot_pr() {
         return 1
     fi
     
+    # Check and setup GitHub Pages for the fork
+    local pages_url=""
+    local pages_status=""
+    local pages_result=0
+    
+    if check_github_pages "$user_login" "webroot"; then
+        pages_url="https://$user_login.github.io/webroot"
+        pages_status="✅ GitHub Pages is enabled"
+        echo "$pages_status: $pages_url"
+    else
+        echo "🔍 GitHub Pages not detected, attempting to enable..."
+        enable_github_pages "$user_login" "webroot"
+        pages_result=$?
+        
+        case $pages_result in
+            0)
+                pages_url="https://$user_login.github.io/webroot"
+                pages_status="🌐 GitHub Pages enabled (may take a few minutes to be available)"
+                ;;
+            2)
+                echo "🔄 Continuing with commit only (no PR as requested)"
+                return 0  # Skip PR creation but continue
+                ;;
+            3)
+                echo "❌ Aborting PR creation as requested"
+                return 1  # Abort completely
+                ;;
+            *)
+                pages_url="https://$user_login.github.io/webroot"
+                pages_status="⚠️ GitHub Pages setup needed - continuing with PR creation"
+                ;;
+        esac
+    fi
+    
+    # Create enhanced PR body with review links
+    local pr_body="## Webroot Update
+
+Automated webroot update from git.sh commit workflow - includes submodule reference updates and configuration changes.
+
+## Review Links
+
+📋 **Live Preview**: [$pages_url]($pages_url)
+🔗 **Fork Repository**: [https://github.com/$user_login/webroot](https://github.com/$user_login/webroot)
+
+## GitHub Pages Status
+$pages_status
+
+---
+*Generated by git.sh commit workflow*"
+    
     local pr_url=$(gh pr create \
         --title "Update webroot with submodule changes" \
-        --body "Automated webroot update from git.sh commit workflow - includes submodule reference updates and configuration changes" \
+        --body "$pr_body" \
         --base main \
         --head "$head_spec" \
         --repo "$parent_account/webroot" 2>/dev/null || echo "")
     
     if [ -n "$pr_url" ]; then
         echo "🔄 Created webroot PR: $pr_url"
+        if [ -n "$pages_url" ]; then
+            echo "📋 Review at: $pages_url"
+        fi
     else
         echo "⚠️ Webroot PR creation failed or not needed"
     fi
@@ -741,7 +854,7 @@ commit_submodules() {
     check_webroot
     
     # Commit each submodule with changes
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
         commit_push "$sub" "$skip_pr"
@@ -781,8 +894,8 @@ commit_all() {
     # Commit all submodules
     commit_submodules "$skip_pr"
     
-    # Commit trade repos
-    for repo in exiobase profile useeio.js io; do
+    # Commit industry repos
+    for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
         commit_push "$repo" "$skip_pr"
@@ -807,7 +920,7 @@ final_push_completion_check() {
     fi
     
     # Check all submodules
-    for sub in cloud comparison feed home localsite products projects realitystream swiper team; do
+    for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         if [ -d "$sub" ]; then
             cd "$sub"
             if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
@@ -818,8 +931,8 @@ final_push_completion_check() {
         fi
     done
     
-    # Check trade repos
-    for repo in exiobase profile useeio.js io; do
+    # Check industry repos
+    for repo in exiobase profile io; do
         if [ -d "$repo" ]; then
             cd "$repo"
             if [ -n "$(git rev-list --count @{u}..HEAD 2>/dev/null)" ] && [ "$(git rev-list --count @{u}..HEAD 2>/dev/null)" != "0" ]; then
@@ -863,7 +976,7 @@ case "$1" in
         echo ""
         echo "Commands:"
         echo "  ./git.sh update                    - Run comprehensive update workflow"
-        echo "  ./git.sh commit                    - Commit webroot, all submodules, and trade repos"
+        echo "  ./git.sh commit                    - Commit webroot, all submodules, and industry repos"
         echo "  ./git.sh commit [name]             - Commit specific submodule"
         echo "  ./git.sh commit submodules         - Commit all submodules only"
         echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
