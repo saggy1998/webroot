@@ -137,6 +137,30 @@ This repository contains the following git submodules configured in `.gitmodules
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
+### Upstream Repository Policy
+
+**CRITICAL**: The maximum upstream level for all repositories is `modelearth` - never pull from higher upstream sources like USEPA.
+
+- **Webroot and Submodules**: Upstream should point to `modelearth` or `ModelEarth` repositories only
+- **Trade Repositories**: Upstream should point to `modelearth` repositories only  
+- **NEVER use USEPA** as upstream sources in any repository
+- **Repository Hierarchy**: `user-fork` → `modelearth` (STOP - do not go higher)
+
+**Example Correct Upstream Configuration:**
+```bash
+# Correct upstream configuration
+git remote add upstream https://github.com/modelearth/useeio.js.git
+git remote add upstream https://github.com/ModelEarth/webroot.git
+
+# WRONG - never use these upstream sources
+git remote add upstream https://github.com/USEPA/useeio.js.git  # ❌ NEVER
+```
+
+**Update Workflow Impact:**
+- The `./git.sh update` command respects this policy and only pulls from modelearth-level repositories
+- If any upstream is incorrectly configured to point above modelearth level, it must be corrected
+- This prevents conflicts from pulling changes from repositories outside the modelearth ecosystem
+
 ### Repository Root Navigation
 **CRITICAL**: Always ensure you're in the webroot repository before executing any commands. The CLI session is pointed to the webroot directory, and all operations must start from there:
 
@@ -289,8 +313,9 @@ When you type "confirm" or "less quick", remove it:
 
 ### Trade Repo List
 The following trade repositories are used for multi-regional input-output (MRIO) analysis:
+- **trade** - https://github.com/modelearth/trade
 - **exiobase** - https://github.com/modelearth/exiobase
-- **profile** - https://github.com/modelearth/profile  
+- **profile** - https://github.com/modelearth/profile
 - **useeio.js** - https://github.com/modelearth/useeio.js
 - **io** - https://github.com/modelearth/io
 
