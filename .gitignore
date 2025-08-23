@@ -10,6 +10,7 @@ data-commons
 data-pipeline
 community-data
 community-timelines
+USEEIO
 
 # Configuration files with sensitive data
 config/settings.js
