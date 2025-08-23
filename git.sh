@@ -479,7 +479,7 @@ update_command() {
     
     # Update webroot
     echo "📥 Updating webroot..."
-    git pull origin main 2>/dev/null || echo "⚠️ Pull conflicts in webroot"
+    git pull origin main 2>/dev/null || echo "⚠️ Checking for conflicts in webroot"
     
     # Update webroot from parent (skip partnertools)
     WEBROOT_REMOTE=$(git remote get-url origin)
@@ -519,7 +519,7 @@ update_command() {
     for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
-        git pull origin main 2>/dev/null || echo "⚠️ Pull conflicts in $repo"
+        git pull origin main 2>/dev/null || echo "⚠️ Checking for conflicts in $repo"
         
         REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
         if [[ "$REMOTE" != *"partnertools"* ]]; then
