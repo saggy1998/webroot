@@ -578,6 +578,22 @@ cargo test                  # Run tests
 cargo run -- init-db       # Create all tables with relationships and constraints
 ```
 
+### Side nav and Section nav
+
+localsite/js/nav.js provides #side-nav
+localsite/js/navigation.js provides #main-nav between the header and footer.
+
+body
+├── #side-nav (fixed, expandable narrow sidebar)
+│   ├── #side-nav-content
+│   └── #side-nav-footer
+└── #main-layout (everything except side-nav)
+    ├── #main-header
+    ├── #main-container (holds both section nav and main content)
+    │   ├── #main-nav (between the header and footer)
+    │   └── #main-content (actual page content)
+    └── #main-footer
+
 #### Environment Configuration
 - Server host/port configurable via `SERVER_HOST`/`SERVER_PORT` environment variables
 - **Primary Database**: PostgreSQL (COMMONS_HOST in .env file)
