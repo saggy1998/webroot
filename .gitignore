@@ -8,11 +8,12 @@ codechat
 membersense
 data-commons
 data-pipeline
+community
 community-data
 community-timelines
 USEEIO
 
-# Configuration files with sensitive data
+# Configuration files
 config/settings.js
 config/keys.json
 config/.env
@@ -36,12 +37,12 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage reports are used for local dev and test by tools like:
+# Jest (JavaScript testing framework), Istanbul/nyc (JavaScript/Node.js) and
+# Linux Test Project LCOV graphical front-end displaying code coverage info.
 coverage/
-*.lcov
-
-# nyc test coverage
 .nyc_output
+*.lcov
 
 # Dependency directories
 node_modules/
