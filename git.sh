@@ -529,7 +529,80 @@ update_command() {
         cd ..
     done
     
-    echo "✅ Update completed! Use: ./git.sh commit"
+    echo "✅ Pull completed! Use: ./git.sh push"
+}
+
+# Pull specific repository
+pull_specific_repo() {
+    local repo_name="$1"
+    
+    cd $(git rev-parse --show-toplevel)
+    check_webroot
+    
+    # Check if it's webroot
+    if [[ "$repo_name" == "webroot" ]]; then
+        echo "📥 Pulling webroot..."
+        git pull origin main 2>/dev/null || echo "⚠️ Checking for conflicts in webroot"
+        
+        WEBROOT_REMOTE=$(git remote get-url origin)
+        if [[ "$WEBROOT_REMOTE" != *"partnertools"* ]]; then
+            add_upstream "webroot" "true"
+            merge_upstream "webroot"
+        fi
+        echo "✅ Webroot pull completed!"
+        return
+    fi
+    
+    # Check if it's a submodule
+    if [[ " cloud comparison feed home localsite products projects realitystream swiper team trade " =~ " $repo_name " ]]; then
+        if [ -d "$repo_name" ]; then
+            echo "📥 Pulling submodule: $repo_name..."
+            cd "$repo_name"
+            
+            REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
+            if [[ "$REMOTE" != *"partnertools"* ]]; then
+                if [[ "$repo_name" == "localsite" ]] || [[ "$repo_name" == "home" ]]; then
+                    add_upstream "$repo_name" "true"
+                else
+                    add_upstream "$repo_name" "false" 
+                fi
+                merge_upstream "$repo_name"
+            fi
+            
+            cd ..
+            git submodule update --remote "$repo_name"
+            echo "✅ $repo_name submodule pull completed!"
+        else
+            echo "⚠️ Submodule not found: $repo_name"
+        fi
+        return
+    fi
+    
+    # Check if it's an industry repo
+    if [[ " exiobase profile io " =~ " $repo_name " ]]; then
+        if [ -d "$repo_name" ]; then
+            echo "📥 Pulling industry repo: $repo_name..."
+            cd "$repo_name"
+            git pull origin main 2>/dev/null || echo "⚠️ Checking for conflicts in $repo_name"
+            
+            REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
+            if [[ "$REMOTE" != *"partnertools"* ]]; then
+                add_upstream "$repo_name" "false"
+                merge_upstream "$repo_name"
+            fi
+            cd ..
+            echo "✅ $repo_name industry repo pull completed!"
+        else
+            echo "⚠️ Industry repo not found: $repo_name"
+        fi
+        return
+    fi
+    
+    echo "⚠️ Repository not recognized: $repo_name"
+    echo "Supported repositories:"
+    echo "  Webroot: webroot"
+    echo "  Submodules: cloud, comparison, feed, home, localsite, products, projects, realitystream, swiper, team, trade"
+    echo "  Industry Repos: exiobase, profile, io"
 }
 
 # Check and fix detached HEAD states in all repositories
@@ -804,56 +877,96 @@ $pages_status
     fi
 }
 
-# Commit specific submodule
-commit_submodule() {
+# Push specific repository
+push_specific_repo() {
     local name="$1"
     local skip_pr="$2"
     
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
-    if [ -d "$name" ]; then
-        cd "$name"
-        commit_push "$name" "$skip_pr"
+    # Check if it's webroot
+    if [[ "$name" == "webroot" ]]; then
+        commit_push "webroot" "$skip_pr"
         
-        # Update webroot submodule reference
-        cd ..
-        git submodule update --remote "$name"
-        if [ -n "$(git status --porcelain | grep $name)" ]; then
-            git add "$name"
-            git commit -m "Update $name submodule reference"
-            
-            # Try to push webroot changes
-            if git push 2>/dev/null; then
-                echo "✅ Updated $name submodule reference"
-            else
-                echo "🔄 Webroot push failed for $name - attempting PR workflow"
-                create_webroot_pr "$skip_pr"
-            fi
-        fi
-        
-        # Check if we need to create a webroot PR (for when webroot push succeeded but we want PR anyway)
+        # Check if webroot needs PR after direct changes
         local webroot_commits_ahead=$(git rev-list --count upstream/main..HEAD 2>/dev/null || echo "0")
         if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
             create_webroot_pr "$skip_pr"
         fi
         
-        # Final push completion check
         echo "🔍 Checking for remaining unpushed commits..."
         final_push_completion_check
-    else
-        echo "⚠️ Repository not found: $name"
+        return
     fi
+    
+    # Check if it's a submodule
+    if [[ " cloud comparison feed home localsite products projects realitystream swiper team trade " =~ " $name " ]]; then
+        if [ -d "$name" ]; then
+            cd "$name"
+            commit_push "$name" "$skip_pr"
+            
+            # Update webroot submodule reference
+            cd ..
+            git submodule update --remote "$name"
+            if [ -n "$(git status --porcelain | grep $name)" ]; then
+                git add "$name"
+                git commit -m "Update $name submodule reference"
+                
+                # Try to push webroot changes
+                if git push 2>/dev/null; then
+                    echo "✅ Updated $name submodule reference"
+                else
+                    echo "🔄 Webroot push failed for $name - attempting PR workflow"
+                    create_webroot_pr "$skip_pr"
+                fi
+            fi
+            
+            # Check if we need to create a webroot PR (for when webroot push succeeded but we want PR anyway)
+            local webroot_commits_ahead=$(git rev-list --count upstream/main..HEAD 2>/dev/null || echo "0")
+            if [[ "$webroot_commits_ahead" -gt "0" ]] && [[ "$skip_pr" != "nopr" ]]; then
+                create_webroot_pr "$skip_pr"
+            fi
+            
+            # Final push completion check
+            echo "🔍 Checking for remaining unpushed commits..."
+            final_push_completion_check
+        else
+            echo "⚠️ Submodule not found: $name"
+        fi
+        return
+    fi
+    
+    # Check if it's an industry repo
+    if [[ " exiobase profile io " =~ " $name " ]]; then
+        if [ -d "$name" ]; then
+            cd "$name"
+            commit_push "$name" "$skip_pr"
+            cd ..
+            
+            echo "🔍 Checking for remaining unpushed commits..."
+            final_push_completion_check
+        else
+            echo "⚠️ Industry repo not found: $name"
+        fi
+        return
+    fi
+    
+    echo "⚠️ Repository not recognized: $name"
+    echo "Supported repositories:"
+    echo "  Webroot: webroot"
+    echo "  Submodules: cloud, comparison, feed, home, localsite, products, projects, realitystream, swiper, team, trade"
+    echo "  Industry Repos: exiobase, profile, io"
 }
 
-# Commit all submodules
-commit_submodules() {
+# Push all submodules
+push_submodules() {
     local skip_pr="$1"
     
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
-    # Commit each submodule with changes
+    # Push each submodule with changes
     for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
@@ -875,14 +988,14 @@ commit_submodules() {
     final_push_completion_check
 }
 
-# Complete commit workflow
-commit_all() {
+# Complete push workflow
+push_all() {
     local skip_pr="$1"
     
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
-    # Commit webroot changes
+    # Push webroot changes
     commit_push "webroot" "$skip_pr"
     
     # Check if webroot needs PR after direct changes
@@ -891,10 +1004,10 @@ commit_all() {
         create_webroot_pr "$skip_pr"
     fi
     
-    # Commit all submodules
-    commit_submodules "$skip_pr"
+    # Push all submodules
+    push_submodules "$skip_pr"
     
-    # Commit industry repos
+    # Push industry repos
     for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
@@ -906,7 +1019,7 @@ commit_all() {
     echo "🔍 Checking for any remaining unpushed commits..."
     final_push_completion_check
     
-    echo "✅ Complete commit finished!"
+    echo "✅ Complete push finished!"
 }
 
 # Check all repositories for unpushed commits and push them
@@ -946,16 +1059,16 @@ final_push_completion_check() {
 
 # Main command dispatcher
 case "$1" in
-    "update")
-        update_command
+    "pull"|"pull-all")
+        pull_command "$2"
         ;;
-    "commit")
+    "push"|"push-all")
         if [ "$2" = "submodules" ]; then
-            commit_submodules "$3"
+            push_submodules "$3"
+        elif [ "$2" = "all" ] || [ -z "$2" ]; then
+            push_all "$2$3"  # Handle both 'push' and 'push all [nopr]'
         elif [ -n "$2" ]; then
-            commit_submodule "$2" "$3"
-        else
-            commit_all "$2"
+            push_specific_repo "$2" "$3"
         fi
         ;;
     "fix-heads"|"fix")
@@ -971,20 +1084,49 @@ case "$1" in
             update_all_remotes_for_user
         fi
         ;;
+    # Legacy command support with helpful messages
+    "update")
+        echo "⚠️ Please use 'pull' or 'pull all' instead of 'update'. Examples:"
+        echo "  • pull           - Pull all changes from webroot, submodules, and industry repos"
+        echo "  • pull localsite - Pull changes for localsite submodule only"
+        echo "  • pull webroot   - Pull changes for webroot only"
+        echo ""
+        exit 1
+        ;;
+    "commit")
+        echo "⚠️ Please use 'push' instead of 'commit'. Examples:"
+        echo "  • push           - Push all repositories with changes"
+        echo "  • push localsite - Push changes for localsite submodule"
+        echo "  • push webroot   - Push changes for webroot only"
+        echo "  • push all       - Push all repositories with changes (same as 'push')"
+        echo ""
+        exit 1
+        ;;
     *)
-        echo "Usage: ./git.sh [update|commit|fix|remotes|auth] [submodule_name|submodules] [nopr]"
+        echo "Usage: ./git.sh [pull|push|fix|remotes|auth] [repo_name|submodules|all] [nopr]"
         echo ""
         echo "Commands:"
-        echo "  ./git.sh update                    - Run comprehensive update workflow"
-        echo "  ./git.sh commit                    - Commit webroot, all submodules, and industry repos"
-        echo "  ./git.sh commit [name]             - Commit specific submodule"
-        echo "  ./git.sh commit submodules         - Commit all submodules only"
+        echo "  ./git.sh pull                      - Pull all repositories (webroot + submodules + industry repos)"
+        echo "  ./git.sh pull [repo_name]          - Pull specific repository"
+        echo "  ./git.sh push                      - Push all repositories with changes"
+        echo "  ./git.sh push all                  - Push all repositories with changes (same as 'push')"
+        echo "  ./git.sh push [repo_name]          - Push specific repository"
+        echo "  ./git.sh push submodules           - Push all submodules only"
         echo "  ./git.sh fix                       - Check and fix detached HEAD states in all repos"
         echo "  ./git.sh remotes                   - Update all remotes to current GitHub user"
         echo "  ./git.sh auth                      - Refresh git credentials for current GitHub user"
         echo ""
+        echo "Supported Repository Names:"
+        echo "  Webroot: webroot"
+        echo "  Submodules: cloud, comparison, feed, home, localsite, products, projects, realitystream, swiper, team, trade"
+        echo "  Industry Repos: exiobase, profile, io"
+        echo ""
         echo "Options:"
         echo "  nopr                               - Skip PR creation on push failures"
+        echo ""
+        echo "Legacy Commands (deprecated):"
+        echo "  update  -> use 'pull' or 'pull all'"
+        echo "  commit  -> use 'push'"
         exit 1
         ;;
 esac

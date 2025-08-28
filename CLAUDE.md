@@ -27,20 +27,20 @@ nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
 
 Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system. The .env file is created from .env.example only if it doesn't already exist.
 
-### Update submodules:
-When you type "update submodules", run
+### Pull submodules:
+When you type "pull submodules", run
 ```bash
 # Navigate to webroot first
 cd $(git rev-parse --show-toplevel)
 git submodule update --remote --recursive
 ```
 
-### Commit submodules:
-When you type "commit submodules", run
+### Push submodules:
+When you type "push submodules", run
 ```bash
-./git.sh commit submodules [nopr]
+./git.sh push submodules [nopr]
 ```
-**Note**: This commits all submodules with changes AND updates the webroot parent repository with new submodule references. Includes automatic PR creation on push failures.
+**Note**: This pushes all submodules with changes AND updates the webroot parent repository with new submodule references. Includes automatic PR creation on push failures.
 
 ### PR [submodule name]:
 Create a pull request for a submodule when you lack collaborator privileges:
@@ -56,19 +56,26 @@ cd ..
 
 **NEVER commit changes without explicit user request.** 
 
-- Only run git commands (add, commit, push) when the user specifically says "commit" or directly requests it
+- Only run git commands (add, commit, push) when the user specifically says "push" or directly requests it
 - After making code changes, STOP and wait for user instruction
 - Build and test changes as needed, but do not commit automatically
 - The user controls when changes are committed to the repository
 
-## Comprehensive Update Command
+## Comprehensive Pull Command
 
-### Update
-When you type "Update", run this comprehensive update workflow that pulls from all parent repos, updates submodules and forks, and prompts for pushes:
+### Pull / Pull All
+When you type "pull" or "pull all", run this comprehensive pull workflow that pulls from all parent repos, updates submodules and industry repos:
 
 ```bash
-./git.sh update
+./git.sh pull
 ```
+
+**Legacy Support**: If the user types "update", inform them to use "pull" or "pull all" instead:
+
+*"Please use 'pull' or 'pull all' instead of 'update'. Examples:*
+- *pull - Pull all changes from webroot, submodules, and industry repos*
+- *pull localsite - Pull changes for localsite submodule only*
+- *pull webroot - Pull changes for webroot only"*
 
 All complex git operations are now handled by the git.sh script to avoid shell parsing issues.
 
@@ -95,7 +102,7 @@ When you switch GitHub accounts, the script will:
 - Runs `gh auth setup-git` to sync git with GitHub CLI
 - Prevents permission denied errors from stale credentials
 
-**Update Command Features:**
+**Pull Command Features:**
 - **Pull from Parents**: Updates webroot, submodules, and industry repos from their respective ModelEarth parent repositories
 - **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks
 - **Partnertools Exclusion**: Completely skips any repositories associated with partnertools GitHub account
@@ -105,20 +112,31 @@ When you switch GitHub accounts, the script will:
 - **Push Guidance**: Prompts user with specific commands for pushing changes back to forks and parent repos
 - **Comprehensive Workflow**: Handles webroot, all submodules, and all industry repositories in one command
 
-**Post-Update Recommendations:**
-After running "./git.sh update", review changes and use these commands as needed:
-- `./git.sh commit` - Push all changes (webroot + submodules + forks) with PR creation
-- `./git.sh commit submodules` - Push only submodule changes  
-- `./git.sh commit [specific-name]` - Push changes for a specific repository
+**Post-Pull Recommendations:**
+After running "./git.sh pull", review changes and use these commands as needed:
+- `./git.sh push` - Push all changes (webroot + submodules + forks) with PR creation
+- `./git.sh push submodules` - Push only submodule changes  
+- `./git.sh push [specific-name]` - Push changes for a specific repository
 
 **Git.sh Usage:**
 ```bash
-./git.sh update                    # Full update workflow  
-./git.sh commit                    # Complete commit: webroot, all submodules, and industry repos
-./git.sh commit [name]             # Commit specific submodule
-./git.sh commit submodules         # Commit all submodules only
-./git.sh commit [name] nopr        # Skip PR creation on push failures
+./git.sh pull                      # Full pull workflow  
+./git.sh push                      # Complete push: webroot, all submodules, and industry repos
+./git.sh push [name]               # Push specific submodule
+./git.sh push submodules           # Push all submodules only
+./git.sh push [name] nopr          # Skip PR creation on push failures
 ```
+
+**Individual Repository Commands:**
+```bash
+./git.sh pull [repo_name]          # Pull specific repository (webroot, submodule, or industry repo)
+./git.sh push [repo_name]          # Push specific repository (webroot, submodule, or industry repo)
+```
+
+**Supported Repository Names:**
+- **Webroot**: webroot
+- **Submodules**: cloud, comparison, feed, home, localsite, products, projects, realitystream, swiper, team, trade
+- **Industry Repos**: exiobase, profile, io
 
 
 ## Submodule Management
@@ -193,15 +211,22 @@ git remote -v
 
 **Common Issue**: If submodule commands fail or you get "pathspec did not match" errors, you're likely in a submodule directory instead of the webroot. Navigate back to your webroot directory using your system's actual webroot path before running any commands.
 
-### IMPORTANT: "commit [name]" Command Requirements
-When a user says "commit [name]", use the git.sh script:
+### IMPORTANT: "push [name]" Command Requirements
+When a user says "push [name]", use the git.sh script:
 
 ```bash
-./git.sh commit [name] [nopr]
+./git.sh push [name] [nopr]
 ```
 
+**Legacy Support**: If the user says "commit [name]", inform them to use "push [name]" instead:
+
+*"Please use 'push [name]' instead of 'commit [name]'. Examples:*
+- *push localsite - Push changes for localsite submodule*
+- *push webroot - Push changes for webroot only*
+- *push all - Push all repositories with changes"*
+
 The git.sh script handles all the complex logic including:
-- Submodule detection and committing
+- Submodule detection and pushing
 - Automatic PR creation on push failures  
 - Webroot submodule reference updates
 - Support for 'nopr' flag to skip PR creation
@@ -264,14 +289,18 @@ fi
 - Requires GitHub CLI (gh) for PR creation functionality
 
 ### Quick Commands for Repositories
-- **"commit [name] [nopr]"**: Intelligent commit with PR fallback - tries submodule → standalone repo → webroot fallback
-- **"push [submodule name]"**: Only push submodule changes (steps 1-3)
+- **"push [name] [nopr]"**: Intelligent push with PR fallback - tries submodule → standalone repo → webroot fallback
+- **"pull [name]"**: Pull changes for specific repository (webroot, submodule, or industry repo)
 - **"PR [submodule name]"**: Create pull request workflow
-- **"commit submodules [nopr]"**: Commit all submodules with PR fallback when push fails
-- **"commit forks [nopr]"**: Commit all industry repo forks and create PRs to parent repos
-- **"commit [nopr]"**: Complete commit workflow with PR fallback - commits webroot, all submodules, and all forks
+- **"push submodules [nopr]"**: Push all submodules with PR fallback when push fails
+- **"push forks [nopr]"**: Push all industry repo forks and create PRs to parent repos
+- **"push [nopr]"** or **"push all [nopr]"**: Complete push workflow with PR fallback - pushes webroot, all submodules, and all forks
 
-**PR Fallback Behavior**: All commit commands automatically create pull requests when direct push fails due to permission restrictions. Add 'nopr' or 'No PR' (case insensitive) at the end of any commit command to skip PR creation.
+**PR Fallback Behavior**: All push commands automatically create pull requests when direct push fails due to permission restrictions. Add 'nopr' or 'No PR' (case insensitive) at the end of any push command to skip PR creation.
+
+**Legacy Command Support**: If users type "commit" or "update", inform them of the new commands:
+- "commit" → "push" 
+- "update" → "pull" or "pull all"
 
 When displaying "Issue Resolved" use the same checkbox icon as "Successfully Updated"
 
@@ -357,13 +386,13 @@ git clone https://github.com/[your github account]/profile profile
 git clone https://github.com/[your github account]/io io
 ```
 
-### Commit All Submodules
+### Push All Submodules
 
 ```bash
-commit submodules [nopr]
+push submodules [nopr]
 ```
 
-The above commits changes to all submodules that have uncommitted changes:
+The above pushes changes to all submodules that have uncommitted changes:
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
 cd $(git rev-parse --show-toplevel)
@@ -403,13 +432,13 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 ```
 
-### Commit Industry Repo Forks
+### Push Industry Repo Forks
 
 ```bash
-commit forks [nopr]
+push forks [nopr]
 ```
 
-The above commits changes to all industry repo forks and creates pull requests to their parent repositories:
+The above pushes changes to all industry repo forks and creates pull requests to their parent repositories:
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
 cd $(git rev-parse --show-toplevel)
@@ -458,13 +487,19 @@ done
   ```
 - **GitHub CLI authentication**: Run `gh auth login` to authenticate with GitHub before using PR features
 
-### Complete Commit Workflow
+### Complete Push Workflow
 
 ```bash
-commit [nopr]
+push [nopr]
 ```
 
-The above runs a comprehensive commit workflow that handles webroot, all submodules, and all industry repo forks with automatic PR creation:
+or
+
+```bash
+push all [nopr]
+```
+
+The above runs a comprehensive push workflow that handles webroot, all submodules, and all industry repo forks with automatic PR creation:
 
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
@@ -543,7 +578,7 @@ for repo in exiobase profile io; do
 done
 ```
 
-**Note**: This is the most comprehensive commit command that handles all repository types in the webroot ecosystem with automatic PR fallback when push permissions are denied. Use 'commit nopr' to skip all PR creation. It will only process repositories that have actual changes.
+**Note**: This is the most comprehensive push command that handles all repository types in the webroot ecosystem with automatic PR fallback when push permissions are denied. Use 'push nopr' or 'push all nopr' to skip all PR creation. It will only process repositories that have actual changes.
 
 
 ### Background Development Rust Server resides in "team" submodule folder (ALWAYS USE THIS)
