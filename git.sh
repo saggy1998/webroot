@@ -471,14 +471,22 @@ commit_push() {
     fi
 }
 
-# Update command - streamlined update workflow  
-update_command() {
-    echo "🔄 Starting update workflow..."
+# Pull command - streamlined pull workflow  
+pull_command() {
+    local repo_name="$1"
+    
+    echo "🔄 Starting pull workflow..."
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
-    # Update webroot
-    echo "📥 Updating webroot..."
+    # If specific repo name provided, pull only that repo
+    if [ -n "$repo_name" ]; then
+        pull_specific_repo "$repo_name"
+        return
+    fi
+    
+    # Pull webroot
+    echo "📥 Pulling webroot..."
     git pull origin main 2>/dev/null || echo "⚠️ Checking for conflicts in webroot"
     
     # Update webroot from parent (skip partnertools)
@@ -488,8 +496,8 @@ update_command() {
         merge_upstream "webroot"
     fi
     
-    # Update submodules
-    echo "📥 Updating submodules..."
+    # Pull submodules
+    echo "📥 Pulling submodules..."
     for sub in cloud comparison feed home localsite products projects realitystream swiper team trade; do
         [ ! -d "$sub" ] && continue
         cd "$sub"
@@ -510,12 +518,12 @@ update_command() {
     echo "🔄 Updating submodule references..."
     git submodule update --remote --recursive
     
-    # Check for and fix any detached HEAD states after updates
-    echo "🔍 Checking for detached HEAD states after update..."
+    # Check for and fix any detached HEAD states after pulls
+    echo "🔍 Checking for detached HEAD states after pull..."
     fix_all_detached_heads
     
-    # Update industry repos
-    echo "📥 Updating industry repos..."
+    # Pull industry repos
+    echo "📥 Pulling industry repos..."
     for repo in exiobase profile io; do
         [ ! -d "$repo" ] && continue
         cd "$repo"
