@@ -585,6 +585,22 @@ done
 
 **Note**: This is the most comprehensive push command that handles all repository types in the webroot ecosystem with automatic PR fallback when push permissions are denied. Use 'push nopr' or 'push all nopr' to skip all PR creation. It will only process repositories that have actual changes.
 
+**Extra Repo Change Detection**: After completing the push workflow, the system automatically checks extra repos (community, nisar, data-pipeline) for uncommitted changes since they are excluded from webroot commits by .gitignore. If changes are found, the user is prompted to choose which extra repo to push:
+
+```
+📝 Extra repos with uncommitted changes detected:
+
+  1) community
+  2) nisar
+  3) all
+
+Which extra repo would you like to push? (1-3 or press Enter to skip):
+```
+
+- Choose **1-2** to push a specific extra repo
+- Choose **3** (or highest number) to push **all** extra repos with changes  
+- Press **Enter** to skip extra repo pushing
+
 
 ### Background Development Rust Server resides in "team" submodule folder (ALWAYS USE THIS)
 

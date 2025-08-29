@@ -654,10 +654,10 @@ fix_all_detached_heads() {
     done
     
     if [ $fixed_count -gt 0 ]; then
-        echo "✅ Fixed detached HEAD states in $fixed_count repositories"
-        echo "💡 You may want to run './git.sh commit' to update submodule references"
+        echo "✅ All $fixed_count submodules pointed at main branch"
+        echo "💡 You may want to run './git.sh push' to update submodule references"
     else
-        echo "✅ No detached HEAD states found"
+        echo "✅ All submodules already on main branch"
     fi
 }
 
@@ -1028,6 +1028,102 @@ push_all() {
     final_push_completion_check
     
     echo "✅ Complete push finished!"
+    
+    # Check extra repos for uncommitted changes
+    check_extra_repos_for_changes
+}
+
+# Check extra repos for uncommitted changes and prompt user
+check_extra_repos_for_changes() {
+    cd $(git rev-parse --show-toplevel)
+    
+    local repos_with_changes=()
+    local repo_names=("community" "nisar" "data-pipeline")
+    
+    # Check each extra repo for changes
+    for repo in "${repo_names[@]}"; do
+        if [ -d "$repo" ]; then
+            cd "$repo"
+            if [ -n "$(git status --porcelain)" ]; then
+                repos_with_changes+=("$repo")
+            fi
+            cd ..
+        fi
+    done
+    
+    # If there are changes, prompt the user
+    if [ ${#repos_with_changes[@]} -gt 0 ]; then
+        echo ""
+        echo "📝 Extra repos with uncommitted changes detected:"
+        echo ""
+        
+        local i=1
+        for repo in "${repos_with_changes[@]}"; do
+            echo "  $i) $repo"
+            ((i++))
+        done
+        echo "  $i) all"
+        echo ""
+        
+        read -p "Which extra repo would you like to push? (1-$i or press Enter to skip): " choice
+        
+        if [ -n "$choice" ]; then
+            if [ "$choice" -eq "$i" ] 2>/dev/null; then
+                # Push all extra repos with changes
+                echo "🚀 Pushing all extra repos with changes..."
+                for repo in "${repos_with_changes[@]}"; do
+                    push_extra_repo "$repo"
+                done
+            elif [ "$choice" -ge 1 ] && [ "$choice" -lt "$i" ] 2>/dev/null; then
+                # Push specific repo
+                local selected_repo="${repos_with_changes[$((choice-1))]}"
+                echo "🚀 Pushing $selected_repo..."
+                push_extra_repo "$selected_repo"
+            else
+                echo "❌ Invalid choice. Skipping extra repo push."
+            fi
+        else
+            echo "⏭️ Skipping extra repo push."
+        fi
+    fi
+}
+
+# Push a specific extra repo
+push_extra_repo() {
+    local repo_name="$1"
+    
+    cd $(git rev-parse --show-toplevel)
+    
+    if [ -d "$repo_name" ]; then
+        cd "$repo_name"
+        
+        if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Update $repo_name repository"
+            
+            if git push origin main 2>/dev/null; then
+                echo "✅ Successfully pushed $repo_name repository"
+            else
+                echo "⚠️ Push failed for $repo_name repository"
+                
+                # Try to create PR if it's a fork
+                local current_user=$(get_current_user)
+                if [ $? -eq 0 ] && [ -n "$current_user" ]; then
+                    local remote_url=$(git remote get-url origin)
+                    if [[ "$remote_url" =~ "$current_user/$repo_name" ]]; then
+                        echo "🔄 Creating pull request for $repo_name..."
+                        gh pr create --title "Update $repo_name" --body "Automated update from webroot integration" --base main --head main 2>/dev/null || echo "PR creation failed for $repo_name"
+                    fi
+                fi
+            fi
+        else
+            echo "✅ No changes to push in $repo_name"
+        fi
+        
+        cd ..
+    else
+        echo "⚠️ Extra repo not found: $repo_name"
+    fi
 }
 
 # Check all repositories for unpushed commits and push them
