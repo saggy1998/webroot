@@ -54,7 +54,7 @@ cd ..
 
 ## IMPORTANT: Git Commit Policy
 
-**NEVER commit changes without explicit user request.** 
+**NEVER commit changes without an explicit user request starting with push or sync.** 
 
 - Only run git commands (add, commit, push) when the user specifically says "push" or directly requests it
 - After making code changes, STOP and wait for user instruction
