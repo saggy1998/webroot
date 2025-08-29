@@ -153,6 +153,12 @@ This repository contains the following git submodules configured in `.gitmodules
 - **realitystream** - https://github.com/modelearth/realitystream
 - **cloud** - https://github.com/modelearth/cloud
 - **trade** - https://github.com/modelearth/trade
+- **codechat** - https://github.com/modelearth/codechat
+- **exiobase** - https://github.com/modelearth/exiobase
+- **io** - https://github.com/modelearth/io
+- **profile** - https://github.com/modelearth/profile
+- **reports** - https://github.com/modelearth/reports
+- **community-forecasting** - https://github.com/modelearth/community-forecasting
 
 **IMPORTANT**: All directories listed above are git submodules, not regular directories. They appear as regular directories when browsing but are actually git submodule references. Always treat them as submodules in git operations.
 
@@ -290,10 +296,10 @@ fi
 
 ### Quick Commands for Repositories
 - **"push [name] [nopr]"**: Intelligent push with PR fallback - tries submodule → standalone repo → webroot fallback
-- **"pull [name]"**: Pull changes for specific repository (webroot, submodule, or industry repo)
+- **"pull [name]"**: Pull changes for specific repository (webroot, submodule, or extra repo)
 - **"PR [submodule name]"**: Create pull request workflow
 - **"push submodules [nopr]"**: Push all submodules with PR fallback when push fails
-- **"push forks [nopr]"**: Push all industry repo forks and create PRs to parent repos
+- **"push forks [nopr]"**: Push all extra repo forks and create PRs to parent repos
 - **"push [nopr]"** or **"push all [nopr]"**: Complete push workflow with PR fallback - pushes webroot, all submodules, and all forks
 
 **PR Fallback Behavior**: All push commands automatically create pull requests when direct push fails due to permission restrictions. Add 'nopr' or 'No PR' (case insensitive) at the end of any push command to skip PR creation.
@@ -344,35 +350,34 @@ When you type "confirm" or "less quick", remove it:
 ]
 ```
 
-## Industry Repositories
+## Extra Repositories
 
-### Industry Repo List
-The following industry repositories are used for multi-regional input-output (MRIO) analysis:
-- **trade** - https://github.com/modelearth/trade (submodule)
-- **exiobase** - https://github.com/modelearth/exiobase
-- **profile** - https://github.com/modelearth/profile
-- **io** - https://github.com/modelearth/io
+### Extra Repo List
+The following extra repositories are used for specialized functionality and are cloned to the webroot root directory (not submodules):
+- **community** - https://github.com/modelearth/community
+- **nisar** - https://github.com/modelearth/nisar
+- **data-pipeline** - https://github.com/modelearth/data-pipeline
 
-**IMPORTANT**: The industry repos (except trade) are cloned to the webroot root directory. They are not submodules, since typical sites only use industry output via the existing comparison submodule.
+**IMPORTANT**: These extra repos are cloned to the webroot root directory and are NOT submodules. They provide specialized functionality that is not needed for typical site deployments.
 
-### Fork Industry Repos
+### Fork Extra Repos
 
 ```bash
-fork industry repos to [your github account]
+fork extra repos to [your github account]
 ```
 
 The above runs these commands:
 ```bash
 # Fork repositories using GitHub CLI (requires 'gh' to be installed and authenticated)
-gh repo fork modelearth/exiobase --clone=false
-gh repo fork modelearth/profile --clone=false
-gh repo fork modelearth/io --clone=false
+gh repo fork modelearth/community --clone=false
+gh repo fork modelearth/nisar --clone=false
+gh repo fork modelearth/data-pipeline --clone=false
 ```
 
-### Clone Industry Repos
+### Clone Extra Repos
 
 ```bash
-clone industry repos from [your github account]
+clone extra repos from [your github account]
 ```
 
 The above runs these commands:
@@ -380,10 +385,10 @@ The above runs these commands:
 # Navigate to webroot repository root first
 cd $(git rev-parse --show-toplevel)
 
-# Clone industry repos to webroot root
-git clone https://github.com/[your github account]/exiobase exiobase
-git clone https://github.com/[your github account]/profile profile
-git clone https://github.com/[your github account]/io io
+# Clone extra repos to webroot root
+git clone https://github.com/[your github account]/community community
+git clone https://github.com/[your github account]/nisar nisar
+git clone https://github.com/[your github account]/data-pipeline data-pipeline
 ```
 
 ### Push All Submodules
@@ -432,13 +437,13 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 ```
 
-### Push Industry Repo Forks
+### Push Extra Repo Forks
 
 ```bash
 push forks [nopr]
 ```
 
-The above pushes changes to all industry repo forks and creates pull requests to their parent repositories:
+The above pushes changes to all extra repo forks and creates pull requests to their parent repositories:
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
 cd $(git rev-parse --show-toplevel)
@@ -447,8 +452,8 @@ if [[ "$*" =~ (nopr|no\ pr)$ ]] || [[ "$*" =~ (NOPR|NO\ PR)$ ]]; then
   SKIP_PR=true
 fi
 
-# Check each industry repo for changes and create PRs
-for repo in exiobase profile io; do
+# Check each extra repo for changes and create PRs
+for repo in community nisar data-pipeline; do
   if [ -d "$repo" ]; then
     cd "$repo"
     if [ -n "$(git status --porcelain)" ]; then
@@ -477,7 +482,7 @@ for repo in exiobase profile io; do
 done
 ```
 
-**Note**: This command requires GitHub CLI (gh) to be installed and authenticated for PR creation. It will create PRs for all industry repo forks unless 'nopr' is specified. Use 'commit forks nopr' to skip PR creation.
+**Note**: This command requires GitHub CLI (gh) to be installed and authenticated for PR creation. It will create PRs for all extra repo forks unless 'nopr' is specified. Use 'push forks nopr' to skip PR creation.
 
 **Common Issues:**
 - **Repository moved errors**: Update remote URLs if you see "This repository moved" messages:
@@ -499,7 +504,7 @@ or
 push all [nopr]
 ```
 
-The above runs a comprehensive push workflow that handles webroot, all submodules, and all industry repo forks with automatic PR creation:
+The above runs a comprehensive push workflow that handles webroot, all submodules, and all extra repo forks with automatic PR creation:
 
 ```bash
 # Navigate to webroot repository root first and detect no-PR flag
@@ -548,8 +553,8 @@ if [ -n "$(git status --porcelain)" ]; then
   fi
 fi
 
-# Step 4: Commit industry repo forks and create PRs
-for repo in exiobase profile io; do
+# Step 4: Push extra repo forks and create PRs
+for repo in community nisar data-pipeline; do
   if [ -d "$repo" ]; then
     cd "$repo"
     if [ -n "$(git status --porcelain)" ]; then

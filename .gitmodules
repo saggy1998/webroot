@@ -31,3 +31,21 @@
 [submodule "trade"]
 	path = trade
 	url = https://github.com/modelearth/trade.git
+[submodule "codechat"]
+	path = codechat
+	url = https://github.com/modelearth/codechat
+[submodule "exiobase"]
+	path = exiobase
+	url = https://github.com/modelearth/exiobase
+[submodule "io"]
+	path = io
+	url = https://github.com/modelearth/io
+[submodule "profile"]
+	path = profile
+	url = https://github.com/modelearth/profile
+[submodule "reports"]
+	path = reports
+	url = https://github.com/modelearth/reports
+[submodule "community-forecasting"]
+	path = community-forecasting
+	url = https://github.com/modelearth/community-forecasting
