@@ -21,7 +21,8 @@
       "Bash(rm:*)",
       "Bash(curl:*)",
       "Bash(gh:*)",
-      "Bash(./git.sh:*)"
+      "Bash(./git.sh:*)",
+      "Bash(yarn build)"
     ],
     "deny": [
       "Read(../**)"
