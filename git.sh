@@ -654,10 +654,10 @@ fix_all_detached_heads() {
     done
     
     if [ $fixed_count -gt 0 ]; then
-        echo "✅ Fixed detached HEAD states in $fixed_count repositories"
-        echo "💡 You may want to run './git.sh commit' to update submodule references"
+        echo "✅ All $fixed_count submodules pointed at main branch"
+        echo "💡 You may want to run './git.sh push' to update submodule references"
     else
-        echo "✅ No detached HEAD states found"
+        echo "✅ All submodules already on main branch"
     fi
 }
 
