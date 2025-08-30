@@ -177,8 +177,8 @@ git remote add upstream https://github.com/modelearth/trade.git
 git remote add upstream https://github.com/ModelEarth/webroot.git
 ```
 
-**Update Workflow Impact:**
-- The `./git.sh update` command respects this policy and only pulls from modelearth-level repositories
+**Pull Workflow Impact:**
+- The `./git.sh pull` command respects this policy and only pulls from modelearth-level repositories
 - If any upstream is incorrectly configured to point above modelearth level, it must be corrected
 - This prevents conflicts from pulling changes from repositories outside the modelearth ecosystem
 

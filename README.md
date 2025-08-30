@@ -32,18 +32,19 @@ Look at the code in your webroot with an editor like [Sublime Text](https://www.
 Update and make commits often (at least hourly).
 Append nopr" or "No PR" if you are not yet ready to send a Pull Request.
 
-Run "update" hourly to safely pull updates from the ModelEarth parent repositories.
+Run "pull" hourly to safely pull updates to the modelearth repos residing in your webroot
 
-When making any change, run "commit" to send a PR. This will also commit changes in submodules and forks.
+When making any change, run "push" to send a PR. "push" updates the webroot, submodules and forks.
 
-	update
-	commit
+	pull
+	push
 
 Addtional options:
 
-	commit [folder name]  # commit a specific submodule or fork
-	commit submodules  # commit changes from all submodules changed
-	commit forks  # commit the 4 forks added for the trade flow
+	push [folder name]  # Deploy a specific submodule or fork
+	push submodules  # Deploy changes from all submodules changed
+	push forks  # Deploy the 4 forks added for the trade flow
 
 
-Or when changing a cloned repo, commit the specific repo using Github Desktop. Then submit a PR through the Github.com website.
+Or when changing a cloned repo, commit the specific repo using Github Desktop. 
+Then submit a PR through the Github.com website.
