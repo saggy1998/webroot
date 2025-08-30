@@ -325,6 +325,11 @@ When displaying "Issue Resolved" use the same checkbox icon as "Successfully Upd
 - **Webroot Detection**: Use `git rev-parse --show-toplevel` or check current working directory against `/Users/helix/Library/Data/webroot` pattern
 - **Security Boundaries**: Claude Code sessions are restricted to working within the webroot and its subdirectories
 
+## Git Command Guidelines
+- **Always Use git.sh**: When receiving "push" and "pull" requests, always use `./git.sh push` and `./git.sh pull` to avoid approval prompts
+- **Avoid Direct Git Commands**: Do not use individual git commands like `git add`, `git commit`, `git push` for these operations
+- **Automatic Workflow**: The git.sh script handles the complete workflow including submodules, remotes, and error handling automatically
+
 ## Quick Commands
 
 When you type "restart", run this single command to restart the server in seconds:
