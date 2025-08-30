@@ -320,6 +320,11 @@ When displaying "Issue Resolved" use the same checkbox icon as "Successfully Upd
 - Keep commit messages clean and focused on the actual changes
 - Include a brief summary of changes in the commit text
 
+## Navigation Guidelines
+- **Directory Restrictions**: If the user requests `cd ../`, first check if you are already in the webroot. If so, ignore the request so errors do not appear.
+- **Webroot Detection**: Use `git rev-parse --show-toplevel` or check current working directory against `/Users/helix/Library/Data/webroot` pattern
+- **Security Boundaries**: Claude Code sessions are restricted to working within the webroot and its subdirectories
+
 ## Quick Commands
 
 When you type "restart", run this single command to restart the server in seconds:
