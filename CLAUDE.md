@@ -3,26 +3,38 @@
 ## Start server or Restart server
 
 ### Start Server
-When you type "start server", run
+When you type "start server", first check if server is already running, then start only if needed:
 
 ```bash
-nohup python -m http.server 8887 > /dev/null 2>&1 &
+# Check if HTTP server is already running on port 8887
+if lsof -ti:8887 > /dev/null 2>&1; then
+  echo "HTTP server already running on port 8887"
+else
+  nohup python -m http.server 8887 > /dev/null 2>&1 &
+  echo "Started HTTP server on port 8887"
+fi
 ```
 
 Note: Uses nohup to run server in background and redirect output to avoid timeout.
 
 
 ### Start Rust API Server
-When you type "start rust", change to the team submodule directory in the repository root and run
+When you type "start rust", first check if server is already running, then start only if needed:
 
 ```bash
-cd team
-# Ensure Rust is installed and cargo is in PATH
-source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-# Copy .env.example to .env only if .env doesn't exist
-[ ! -f .env ] && cp .env.example .env
-# Start the server with correct binary name
-nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
+# Check if Rust API server is already running on port 8081
+if lsof -ti:8081 > /dev/null 2>&1; then
+  echo "Rust API server already running on port 8081"
+else
+  cd team
+  # Ensure Rust is installed and cargo is in PATH
+  source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  # Copy .env.example to .env only if .env doesn't exist
+  [ ! -f .env ] && cp .env.example .env
+  # Start the server with correct binary name
+  nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
+  echo "Started Rust API server on port 8081"
+fi
 ```
 
 Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system. The .env file is created from .env.example only if it doesn't already exist.
@@ -319,6 +331,14 @@ When displaying "Issue Resolved" use the same checkbox icon as "Successfully Upd
 - **NEVER add "🤖 Generated with [Claude Code]" or similar footers**
 - Keep commit messages clean and focused on the actual changes
 - Include a brief summary of changes in the commit text
+
+## DOM Element Waiting
+- **NEVER use setTimeout() for waiting for DOM elements**
+- **ALWAYS use waitForElm(selector)** from localsite/js/localsite.js instead
+- Check if localsite/js/localsite.js is included in the page before using waitForElm
+- If not included, ask user if localsite/js/localsite.js should be added to the page
+- Example: `waitForElm('#element-id').then(() => { /* code */ });`
+- waitForElm does not use timeouts and waits indefinitely until element appears
 
 ## Navigation Guidelines
 - **Directory Restrictions**: If the user requests `cd ../`, first check if you are already in the webroot. If so, ignore the request so errors do not appear.
