@@ -76,7 +76,7 @@ cd ..
 ## Comprehensive Pull Command
 
 ### Pull / Pull All
-When you type "pull" or "pull all", run this comprehensive pull workflow that pulls from all parent repos, updates submodules and industry repos:
+When you type "pull" or "pull all", run this comprehensive pull workflow that pulls from all parent repos, submodules and industry repos:
 
 ```bash
 ./git.sh pull
@@ -101,10 +101,10 @@ gh auth login                     # Log into different GitHub account
 ```
 
 When you switch GitHub accounts, the script will:
-- **Automatically detect** the new user during commit/update operations
+- **Automatically detect** the new user during pull/push operations
 - **Clear cached git credentials** from previous account
 - **Refresh authentication** to use new GitHub CLI credentials  
-- **Update remote URLs** to point to the new user's forks
+- **Change remote URLs** to point to the new user's forks
 - **Create PRs** from the new user's account
 - **Fork repositories** to the new user's account when needed
 
@@ -115,12 +115,12 @@ When you switch GitHub accounts, the script will:
 - Prevents permission denied errors from stale credentials
 
 **Pull Command Features:**
-- **Pull from Parents**: Updates webroot, submodules, and industry repos from their respective ModelEarth parent repositories
+- **Pull from Parents**: Pulls webroot, submodules, and industry repos from their respective ModelEarth parent repositories
 - **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks
 - **Partnertools Exclusion**: Completely skips any repositories associated with partnertools GitHub account
 - **Merge Strategy**: Uses automatic merge with no-edit to incorporate upstream changes
 - **Conflict Handling**: Reports merge conflicts for manual resolution when they occur  
-- **Status Reporting**: Provides clear feedback on what was updated and any issues encountered
+- **Status Reporting**: Provides clear feedback on what was pulled and any issues encountered
 - **Push Guidance**: Prompts user with specific commands for pushing changes back to forks and parent repos
 - **Comprehensive Workflow**: Handles webroot, all submodules, and all industry repositories in one command
 
