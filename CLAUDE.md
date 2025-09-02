@@ -3,26 +3,38 @@
 ## Start server or Restart server
 
 ### Start Server
-When you type "start server", run
+When you type "start server", first check if server is already running, then start only if needed:
 
 ```bash
-nohup python -m http.server 8887 > /dev/null 2>&1 &
+# Check if HTTP server is already running on port 8887
+if lsof -ti:8887 > /dev/null 2>&1; then
+  echo "HTTP server already running on port 8887"
+else
+  nohup python -m http.server 8887 > /dev/null 2>&1 &
+  echo "Started HTTP server on port 8887"
+fi
 ```
 
 Note: Uses nohup to run server in background and redirect output to avoid timeout.
 
 
 ### Start Rust API Server
-When you type "start rust", change to the team submodule directory in the repository root and run
+When you type "start rust", first check if server is already running, then start only if needed:
 
 ```bash
-cd team
-# Ensure Rust is installed and cargo is in PATH
-source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-# Copy .env.example to .env only if .env doesn't exist
-[ ! -f .env ] && cp .env.example .env
-# Start the server with correct binary name
-nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
+# Check if Rust API server is already running on port 8081
+if lsof -ti:8081 > /dev/null 2>&1; then
+  echo "Rust API server already running on port 8081"
+else
+  cd team
+  # Ensure Rust is installed and cargo is in PATH
+  source ~/.cargo/env 2>/dev/null || echo "Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  # Copy .env.example to .env only if .env doesn't exist
+  [ ! -f .env ] && cp .env.example .env
+  # Start the server with correct binary name
+  nohup cargo run --bin partner_tools -- serve > server.log 2>&1 &
+  echo "Started Rust API server on port 8081"
+fi
 ```
 
 Note: The team repository is a submodule located in the repository root directory. The Rust API server runs on port 8081. Requires Rust/Cargo to be installed on the system. The .env file is created from .env.example only if it doesn't already exist.
@@ -64,7 +76,7 @@ cd ..
 ## Comprehensive Pull Command
 
 ### Pull / Pull All
-When you type "pull" or "pull all", run this comprehensive pull workflow that pulls from all parent repos, updates submodules and industry repos:
+When you type "pull" or "pull all", run this comprehensive pull workflow that pulls from all parent repos, submodules and industry repos:
 
 ```bash
 ./git.sh pull
@@ -89,10 +101,10 @@ gh auth login                     # Log into different GitHub account
 ```
 
 When you switch GitHub accounts, the script will:
-- **Automatically detect** the new user during commit/update operations
+- **Automatically detect** the new user during pull/push operations
 - **Clear cached git credentials** from previous account
 - **Refresh authentication** to use new GitHub CLI credentials  
-- **Update remote URLs** to point to the new user's forks
+- **Change remote URLs** to point to the new user's forks
 - **Create PRs** from the new user's account
 - **Fork repositories** to the new user's account when needed
 
@@ -103,12 +115,12 @@ When you switch GitHub accounts, the script will:
 - Prevents permission denied errors from stale credentials
 
 **Pull Command Features:**
-- **Pull from Parents**: Updates webroot, submodules, and industry repos from their respective ModelEarth parent repositories
+- **Pull from Parents**: Pulls webroot, submodules, and industry repos from their respective ModelEarth parent repositories
 - **Fork-Aware**: Automatically adds upstream remotes for parent repos when working with forks
 - **Partnertools Exclusion**: Completely skips any repositories associated with partnertools GitHub account
 - **Merge Strategy**: Uses automatic merge with no-edit to incorporate upstream changes
 - **Conflict Handling**: Reports merge conflicts for manual resolution when they occur  
-- **Status Reporting**: Provides clear feedback on what was updated and any issues encountered
+- **Status Reporting**: Provides clear feedback on what was pulled and any issues encountered
 - **Push Guidance**: Prompts user with specific commands for pushing changes back to forks and parent repos
 - **Comprehensive Workflow**: Handles webroot, all submodules, and all industry repositories in one command
 
@@ -177,8 +189,8 @@ git remote add upstream https://github.com/modelearth/trade.git
 git remote add upstream https://github.com/ModelEarth/webroot.git
 ```
 
-**Update Workflow Impact:**
-- The `./git.sh update` command respects this policy and only pulls from modelearth-level repositories
+**Pull Workflow Impact:**
+- The `./git.sh pull` command respects this policy and only pulls from modelearth-level repositories
 - If any upstream is incorrectly configured to point above modelearth level, it must be corrected
 - This prevents conflicts from pulling changes from repositories outside the modelearth ecosystem
 
@@ -319,6 +331,24 @@ When displaying "Issue Resolved" use the same checkbox icon as "Successfully Upd
 - **NEVER add "🤖 Generated with [Claude Code]" or similar footers**
 - Keep commit messages clean and focused on the actual changes
 - Include a brief summary of changes in the commit text
+
+## DOM Element Waiting
+- **NEVER use setTimeout() for waiting for DOM elements**
+- **ALWAYS use waitForElm(selector)** from localsite/js/localsite.js instead
+- Check if localsite/js/localsite.js is included in the page before using waitForElm
+- If not included, ask user if localsite/js/localsite.js should be added to the page
+- Example: `waitForElm('#element-id').then(() => { /* code */ });`
+- waitForElm does not use timeouts and waits indefinitely until element appears
+
+## Navigation Guidelines
+- **Directory Restrictions**: If the user requests `cd ../`, first check if you are already in the webroot. If so, ignore the request so errors do not appear.
+- **Webroot Detection**: Use `git rev-parse --show-toplevel` or check current working directory against `/Users/helix/Library/Data/webroot` pattern
+- **Security Boundaries**: Claude Code sessions are restricted to working within the webroot and its subdirectories
+
+## Git Command Guidelines
+- **Always Use git.sh**: When receiving "push" and "pull" requests, always use `./git.sh push` and `./git.sh pull` to avoid approval prompts
+- **Avoid Direct Git Commands**: Do not use individual git commands like `git add`, `git commit`, `git push` for these operations
+- **Automatic Workflow**: The git.sh script handles the complete workflow including submodules, remotes, and error handling automatically
 
 ## Quick Commands
 
