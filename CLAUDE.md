@@ -73,6 +73,21 @@ cd ..
 - Build and test changes as needed, but do not commit automatically
 - The user controls when changes are committed to the repository
 
+## HTML File Standards
+
+**UTF-8 Character Encoding**: Always include `<meta charset="UTF-8">` in the `<head>` section of new HTML pages to ensure proper character rendering and prevent display issues with special characters.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- other meta tags and content -->
+</head>
+```
+
+**Exceptions**: Do not add charset declarations to redirect pages or template fragments that are included in other pages, as they inherit encoding from their parent documents.
+
 ## Comprehensive Pull Command
 
 ### Pull / Pull All
