@@ -2,6 +2,7 @@
 
 # git.sh - Streamlined git operations for webroot repository
 # Usage: ./git.sh [command] [options]
+# Push commands automatically pull first unless 'nopull' or 'no pull' is specified
 
 set -e  # Exit on any error
 
@@ -893,6 +894,13 @@ push_specific_repo() {
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
+    # Auto-pull unless nopull/no pull is specified
+    if [[ "$skip_pr" != *"nopull"* ]] && [[ "$skip_pr" != *"no pull"* ]]; then
+        echo "🔄 Auto-pulling $name before push..."
+        pull_command "$name"
+        echo "✅ Pull completed for $name, proceeding with push..."
+    fi
+    
     # Check if it's webroot
     if [[ "$name" == "webroot" ]]; then
         commit_push "webroot" "$skip_pr"
@@ -974,6 +982,13 @@ push_submodules() {
     cd $(git rev-parse --show-toplevel)
     check_webroot
     
+    # Auto-pull unless nopull/no pull is specified
+    if [[ "$skip_pr" != *"nopull"* ]] && [[ "$skip_pr" != *"no pull"* ]]; then
+        echo "🔄 Auto-pulling submodules before push..."
+        pull_command
+        echo "✅ Pull completed for submodules, proceeding with push..."
+    fi
+    
     # Push each submodule with changes
     for sub in cloud comparison feed home localsite products projects realitystream swiper team trade codechat exiobase io profile reports community-forecasting; do
         [ ! -d "$sub" ] && continue
@@ -1002,6 +1017,13 @@ push_all() {
     
     cd $(git rev-parse --show-toplevel)
     check_webroot
+    
+    # Auto-pull unless nopull/no pull is specified
+    if [[ "$skip_pr" != *"nopull"* ]] && [[ "$skip_pr" != *"no pull"* ]]; then
+        echo "🔄 Auto-pulling before push..."
+        pull_command
+        echo "✅ Pull completed, proceeding with push..."
+    fi
     
     # Push webroot changes
     commit_push "webroot" "$skip_pr"
