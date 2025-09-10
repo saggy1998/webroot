@@ -43,6 +43,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+__pycache__
 
 # Coverage reports are used for local dev and test by tools like:
 # Jest (JavaScript testing framework), Istanbul/nyc (JavaScript/Node.js) and
