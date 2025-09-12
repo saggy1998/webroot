@@ -1,21 +1,25 @@
 # Extra repos that are not submodules
 apps
-trade-data
-useeio.js
-membersense
-data-commons
+community
 community-data
 community-timelines
-requests
-wiki
-panels
-topojson
-useeio-json
-useeio
-community
-nisar
-products-big-files-to-delete
+data-commons
 data-pipeline
+display
+explore
+membersense
+nisar
+panels
+products-big-files-to-delete
+reality.streamlit*
+requests
+resources
+trade-data
+topojson
+useeio
+useeio-json
+useeio.js
+wiki
 
 # Configuration files
 config/settings.js
@@ -40,6 +44,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+__pycache__
 
 # Coverage reports are used for local dev and test by tools like:
 # Jest (JavaScript testing framework), Istanbul/nyc (JavaScript/Node.js) and
